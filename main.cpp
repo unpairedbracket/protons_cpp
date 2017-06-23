@@ -1,13 +1,5 @@
 #include "main.h"
 
-#include <cmath>
-#include <cstdio>
-
-#include <chrono>
-#include <iostream>
-
-#include <omp.h>
-
 int main() {
     const double mass = 1;
     const double charge = 1;
