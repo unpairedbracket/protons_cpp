@@ -5,34 +5,21 @@ int main() {
     const double charge = 1;
     ParticleInfo* protons = makeParticle(mass, charge);
 
-    long n = 1000;
-    long m = 1000;
-    long N = n * m;
-    double* positionX = new double[N];
-    double* positionY = new double[N];
-    double* positionZ = new double[N];
-
-    double* velocityX = new double[N];
-    double* velocityY = new double[N];
-    double* velocityZ = new double[N];
-
-    double* accelX = new double[N];
-    double* accelY = new double[N];
-    double* accelZ = new double[N];
-
-    double* Bx = new double[N];
-    double* By = new double[N];
-    double* Bz = new double[N];
-
-    double* Ex = new double[N];
-    double* Ey = new double[N];
-    double* Ez = new double[N];
+    long n_x = 2;
+    long n_y = 10;
+    long N = n_x * n_y;
 
     //Source
     double sourceDistance = 1.0; //Distance from proton source to front object plane, metres
-    double sourceDivergence = pi()/8.0; //Radians from axis, i.e. pi/2 for hemisphere
+    double sourceDivergence = pi()/8.0; //Radians from axis, i.e. pi/2 for hemisphere-ish. Must currently be smaller than pi/4 due to dodgy implementation.
     double sourceEnergy = 1.0; //Source energy, joules
-    ParticleSource* source = makeSource(protons, sourceDistance, sourceDivergence, sourceEnergy);
+    ParticleSource* source = makeSource(protons, sourceDistance, sourceDivergence, sourceEnergy, n_x, n_y);
+
+    ParticleState* state = makeParticleState(source);
+    initPos(state);
+    initVel(source, state);
+
+    print_status(state);
 
     //Object
     double objectLength = 0.01; //Distance from front object plane to back object plane, metres
@@ -43,17 +30,14 @@ int main() {
     double detectorDistance; //Distance from back object plane to image plane
     ParticleDetector* detector = makeDetector(protons, detectorDistance);
 
-    double* dt = new double[N];
-
-    initPos(positionX, positionY, positionZ, N);
-    initVel(source, velocityX, velocityY, velocityZ, n, m);
-
     #pragma omp parallel for
     for(long j = 0; j < N; j++) {
-        positionX[j] += velocityX[j] / velocityZ[j] * sourceDistance;
-        positionY[j] += velocityY[j] / velocityZ[j] * sourceDistance;
-        positionZ[j] += sourceDistance;
+        state->posX[j] += state->velX[j] / state->velZ[j] * source->distance;
+        state->posY[j] += state->velY[j] / state->velZ[j] * source->distance;
+        state->posZ[j] += sourceDistance;
     }
+
+    print_status(state);
 
     printf("\n");
     const long steps = 1000;
@@ -63,44 +47,27 @@ int main() {
 
     integrator* RKDPIntegrator = makeIntegrator(N);
 
+    #pragma omp parallel for
+    for(long j = 0; j < N; j++) {
+        RKDPIntegrator->dt[j] = 0.1;
+    }
+
     for(long i = 0; i < steps; i++) {
         begin = std::chrono::steady_clock::now();
 
         step(
                 RKDPIntegrator,
-                protons, field,
-                positionX, positionY, positionZ,
-                velocityX, velocityY, velocityZ,
-                dt, N,
+                state, field,
                 accel
             );
-       
         end = std::chrono::steady_clock::now();
         //printf("After iteration %ld\n", i+1);
-        //print_status(positionX, positionY, positionZ, velocityX, velocityY, velocityZ, N);
-        //printf("\n");
+        print_status(state);
+        printf("\n");
         std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count()/1000.0 << " us" <<std::endl;
     }
 
 //    print_status(positionX, positionY, positionZ, velocityX, velocityY, velocityZ, N);
-
-    free(positionX);
-    free(positionY);
-    free(positionZ);
-    free(velocityX);
-    free(velocityY);
-    free(velocityZ);
-    free(accelX);
-    free(accelY);
-    free(accelZ);
-
-    free(Bx);
-    free(By);
-    free(Bz);
-    free(Ex);
-    free(Ey);
-    free(Ez);
-
     return 0;
 }
 
@@ -114,31 +81,36 @@ void accel(ParticleInfo* particle, FieldStructure* fields, double* x, double* y,
     }
 }
 
-void initPos(double* X, double* Y, double* Z, long N) {
-    for(long i = 0; i < N; i++) {
-        X[i] = 0;
-        Y[i] = 0;
-        Z[i] = 0;
+void initPos(ParticleState* particles) {
+    for(long i = 0; i < particles->N; i++) {
+        particles->posX[i] = 0;
+        particles->posY[i] = 0;
+        particles->posZ[i] = 0;
     }
 }
 
-void initVel(ParticleSource* sourceInfo, double* vX, double* vY, double* vZ, long n, long m) {
-    for(long i = 0; i < m*n; i++) {
-        long j = i / n;
-        long k = i % n;
-        double angleX = (2*j / ((double)m-1) - 1) * sourceInfo->divergence;
-        double angleY = (2*k / ((double)n-1) - 1) * sourceInfo->divergence;
-        double speed = sqrt(2 * sourceInfo->energy / sourceInfo->particleInfo->mass);
+void initVel(ParticleSource* sourceInfo, ParticleState* particles) {
+    assert(sourceInfo->x_extent*sourceInfo->y_extent == particles->N);
+    assert(sourceInfo->divergence < pi() / 4);
 
-        vX[i] = speed * sin(angleX);
-        vY[i] = speed * sin(angleY);
-        vZ[i] = speed * sqrt(cos(angleX + angleY) * cos(angleX - angleY));
+    double speed = sqrt(2 * sourceInfo->energy / particles->particleInfo->mass);
+    printf("speed: %f", speed);
+    for(long i = 0; i < particles->N; i++) {
+        long j = i / sourceInfo->y_extent;
+        long k = i % sourceInfo->y_extent;
+        printf("(%lu, %lu)", j, k);
+        double angleX = (2*j / ((double)sourceInfo->x_extent-1) - 1) * sourceInfo->divergence;
+        double angleY = (2*k / ((double)sourceInfo->y_extent-1) - 1) * sourceInfo->divergence;
+
+        particles->velX[i] = speed * sin(angleX);
+        particles->velY[i] = speed * sin(angleY);
+        particles->velZ[i] = speed * sqrt(cos(angleX + angleY) * cos(angleX - angleY));
     }
 }
 
-void print_status(double* X, double* Y, double* Z, double* vX, double* vY, double* vZ, long N) {
-    for(long i = 0; i < N; i++) {
-        printf("pos = [%f, %f, %f]; vel = [%f, %f, %f]\n", X[i], Y[i], Z[i], vX[i], vY[i], vZ[i]);
+void print_status(ParticleState* state) {
+    for(long i = 0; i < 3; i++) {//state->N; i++) {
+        printf("pos = [%f, %f, %f]; vel = [%f, %f, %f]\n", state->posX[i], state->posY[i], state->posZ[i], state->velX[i], state->velY[i], state->velZ[i]);
     }
 }
 

@@ -15,29 +15,27 @@ integrator* makeIntegrator(long N) {
     method->accelx = new double[N];
     method->accely = new double[N];
     method->accelz = new double[N];
+    method->dt = new double[N];
     return method;
 }
 
 void step(
         integrator* method,
-        ParticleInfo* particle, FieldStructure* field,
-        double*  x, double*  y, double*  z,
-        double* vx, double* vy, double* vz,
-        double* dt, long N,
+        ParticleState* state, FieldStructure* field,
         void (*accelFunc)(ParticleInfo*, FieldStructure*, double*, double*, double*, double*, double*, double*, double*, double*, double*, long)
     ) {
 
-    accelFunc(particle, field, x, y, z, vx, vy, vz, method->accelx, method->accely, method->accelz, N);
+    accelFunc(state->particleInfo, field, state->posX, state->posY, state->posZ, state->velX, state->velY, state->velZ, method->accelx, method->accely, method->accelz, state->N);
     
     #pragma omp parallel for
-    for(long j = 0; j < N; j++) {
-        x[j] += vx[j] * dt[j];
-        y[j] += vy[j] * dt[j];
-        z[j] += vz[j] * dt[j];
+    for(long j = 0; j < state->N; j++) {
+        state->posX[j] += state->velX[j] * method->dt[j];
+        state->posY[j] += state->velY[j] * method->dt[j];
+        state->posZ[j] += state->velZ[j] * method->dt[j];
 
-        vx[j] += method->accelx[j] * dt[j];
-        vy[j] += method->accely[j] * dt[j];
-        vz[j] += method->accelz[j] * dt[j];
+        state->velX[j] += method->accelx[j] * method->dt[j];
+        state->velY[j] += method->accely[j] * method->dt[j];
+        state->velZ[j] += method->accelz[j] * method->dt[j];
     }
 }
 //function [posOut, velOut, accelOut, dtOut] = RKDPIntegrate(posIn, velIn, accelIn, dt, func)

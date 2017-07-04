@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cassert>
 
 #include <chrono>
 #include <iostream>
@@ -14,11 +15,12 @@
 
 constexpr double pi() { return std::atan(1)*4; }
 
-void initPos(double* X, double* Y, double* Z, long N);
+void initPos(ParticleState* particles);
 
-void initVel(ParticleSource* source, double* vX, double* vY, double* vZ, long n, long m);
+void initVel(ParticleSource* sourceInfo, ParticleState* particles);
 
-void print_status(double* X, double* Y, double* Z, double* vX, double* vY, double* vZ, long N);
+void print_status(ParticleState* state);
 
 int main();
+
 void accel(ParticleInfo* particle, FieldStructure* fields, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* accx, double* accy, double* accz, long N);
