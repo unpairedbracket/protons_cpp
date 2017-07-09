@@ -47,6 +47,8 @@ int main() {
 
     integrator* RKDPIntegrator = makeIntegrator(N);
 
+    double sumTimes, sumSqTimes;
+
     #pragma omp parallel for
     for(long j = 0; j < N; j++) {
         RKDPIntegrator->dt[j] = 0.1;
@@ -64,8 +66,13 @@ int main() {
         //printf("After iteration %ld\n", i+1);
         print_status(state);
         printf("\n");
-        std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count()/1000.0 << " us" <<std::endl;
+        double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
+        std::cout << "Time difference = " << nanoTaken/1000.0 << " us" <<std::endl;
+        sumTimes += nanoTaken;
+        sumSqTimes += nanoTaken*nanoTaken;
     }
+    std::cout << "Average time taken: " << sumTimes / (1000.0 * steps) << " us" << std::endl;
+    std::cout << "Standard Deviation: " << sqrt((sumSqTimes/steps) - (sumTimes*sumTimes)/(steps*steps)) / 1000.0 << " us" << std::endl;
 
 //    print_status(positionX, positionY, positionZ, velocityX, velocityY, velocityZ, N);
     return 0;
