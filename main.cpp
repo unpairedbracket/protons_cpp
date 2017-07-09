@@ -1,12 +1,21 @@
 #include "main.h"
 
-int main() {
+int main(int argc, char *argv[]) {
     const double mass = 1;
     const double charge = 1;
     ParticleInfo* protons = makeParticle(mass, charge);
 
-    long n_x = 2;
-    long n_y = 10;
+    long n_x;
+    long n_y;
+
+    if(argc != 3) {
+        n_x = 100;
+        n_y = 100;
+    } else {
+        n_x = atol(argv[1]);
+        n_y = atol(argv[2]);
+    }
+
     long N = n_x * n_y;
 
     //Source

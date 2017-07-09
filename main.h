@@ -21,6 +21,6 @@ void initVel(ParticleSource* sourceInfo, ParticleState* particles);
 
 void print_status(ParticleState* state);
 
-int main();
+int main(int argc, char *argv[]);
 
 void accel(ParticleInfo* particle, FieldStructure* fields, double* x, double* y, double* z, double* vx, double* vy, double* vz, double* accx, double* accy, double* accz, long N);
