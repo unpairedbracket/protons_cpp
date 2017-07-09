@@ -73,10 +73,10 @@ int main(int argc, char *argv[]) {
             );
         end = std::chrono::steady_clock::now();
         //printf("After iteration %ld\n", i+1);
-        print_status(state);
-        printf("\n");
+        //print_status(state);
+        //printf("\n");
         double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
-        std::cout << "Time difference = " << nanoTaken/1000.0 << " us" <<std::endl;
+        //std::cout << "Time difference = " << nanoTaken/1000.0 << " us" <<std::endl;
         sumTimes += nanoTaken;
         sumSqTimes += nanoTaken*nanoTaken;
     }
@@ -114,7 +114,7 @@ void initVel(ParticleSource* sourceInfo, ParticleState* particles) {
     for(long i = 0; i < particles->N; i++) {
         long j = i / sourceInfo->y_extent;
         long k = i % sourceInfo->y_extent;
-        printf("(%lu, %lu)", j, k);
+        //printf("(%lu, %lu)", j, k);
         double angleX = (2*j / ((double)sourceInfo->x_extent-1) - 1) * sourceInfo->divergence;
         double angleY = (2*k / ((double)sourceInfo->y_extent-1) - 1) * sourceInfo->divergence;
 
