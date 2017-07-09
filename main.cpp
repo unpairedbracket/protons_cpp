@@ -71,8 +71,8 @@ int main() {
         sumTimes += nanoTaken;
         sumSqTimes += nanoTaken*nanoTaken;
     }
-    std::cout << "Average time taken: " << sumTimes / (1000.0 * steps) << " us" << std::endl;
-    std::cout << "Standard Deviation: " << sqrt((sumSqTimes/steps) - (sumTimes*sumTimes)/(steps*steps)) / 1000.0 << " us" << std::endl;
+    std::cout << "Average time taken: " << sumTimes / (1000.0 * steps) << " us (" << sumTimes / (1000.0 * steps * state->N) << " us per particle)" << std::endl;
+    std::cout << "Standard Deviation: " << sqrt((sumSqTimes/steps) - (sumTimes*sumTimes)/(steps*steps)) / 1000.0 << " us (" << sqrt((sumSqTimes/steps) - (sumTimes*sumTimes)/(steps*steps)) / (1000.0 * state->N) << " us per particle)" << std::endl;
 
 //    print_status(positionX, positionY, positionZ, velocityX, velocityY, velocityZ, N);
     return 0;
