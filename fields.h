@@ -1,10 +1,12 @@
 #pragma once
 
+#include "structs.h"
+
 struct FieldStructure {
+    long N;
     double *Ex, *Ey, *Ez;
     double *Bx, *By, *Bz;
+
+    virtual void initFields() = 0;
+    virtual void getFields(ParticleState* state) = 0;
 };
-
-FieldStructure* makeFieldStructure(long N);
-
-void getFields(FieldStructure* fields, double* x, double* y, double* z, long N);

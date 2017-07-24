@@ -1,16 +1,12 @@
 #include "structs.h"
 
-ParticleInfo* makeParticle(double mass, double charge) {
-    ParticleInfo* particle = new ParticleInfo();
+void initParticle(ParticleInfo* particle, double mass, double charge) {
     particle->mass = mass;
     particle->charge = charge;
     particle->qmratio = charge/mass;
-    return particle;
 }
 
-ParticleState* makeParticleState(ParticleSource* source) {
-    ParticleState* state = new ParticleState();
-
+void initParticleState(ParticleState* state, ParticleSource* source) {
     long N = source->x_extent * source->y_extent;
     state->particleInfo = source->particleInfo;
     
@@ -22,12 +18,15 @@ ParticleState* makeParticleState(ParticleSource* source) {
     state->velY = new double[N];
     state->velZ = new double[N];
 
+    state->running = new bool[N];
+
+    memset(state->running, true, sizeof(bool)*N);
+
     state->N = N;
-    return state;
+    state->N_running = N;
 }
 
-ParticleSource* makeSource(ParticleInfo* particle, double distance, double divergence, double energy, long x_extent, long y_extent) {
-    ParticleSource* source = new ParticleSource();
+void initSource(ParticleSource* source, ParticleInfo* particle, double distance, double divergence, double energy, long x_extent, long y_extent) {
     source->particleInfo = particle;
     source->distance = distance;
     source->divergence = divergence;
@@ -35,12 +34,9 @@ ParticleSource* makeSource(ParticleInfo* particle, double distance, double diver
 
     source->x_extent = x_extent;
     source->y_extent = y_extent;
-    return source;
 }
 
-ParticleDetector* makeDetector(ParticleInfo* particle, double distance) {
-    ParticleDetector* detector = new ParticleDetector();
+void initDetector(ParticleDetector* detector, ParticleInfo* particle, double distance) {
     detector->particleInfo = particle;
     detector->distance = distance;
-    return detector;
 }

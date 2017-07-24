@@ -24,5 +24,5 @@ integrator* makeIntegrator(long N);
 void step(
         integrator* method,
         ParticleState* state, FieldStructure* field,
-        void (*accelFunc)(ParticleInfo*, FieldStructure*, double*, double*, double*, double*, double*, double*, double*, double*, double*, long N)
+        void (*accelFunc)(ParticleState*, FieldStructure*, double*, double*, double*)
     );

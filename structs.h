@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring>
+
 struct ParticleInfo {
     double mass;
     double charge;
@@ -11,7 +13,9 @@ struct ParticleState {
     ParticleInfo *particleInfo;
     double *posX, *posY, *posZ;
     double *velX, *velY, *velZ;
+    bool *running;
     long N;
+    long N_running;
 };
 
 struct ParticleSource {
@@ -28,7 +32,7 @@ struct ParticleDetector {
     double distance;
 };
 
-ParticleInfo* makeParticle(double mass, double charge);
-ParticleState* makeParticleState(ParticleSource* source);
-ParticleSource* makeSource(ParticleInfo* particle, double distance, double divergence, double energy, long x_extent, long y_extent);
-ParticleDetector* makeDetector(ParticleInfo* particle, double distance);
+void initParticle(ParticleInfo* particle, double mass, double charge);
+void initParticleState(ParticleState* state, ParticleSource* source);
+void initSource(ParticleSource* source, ParticleInfo* particle, double distance, double divergence, double energy, long x_extent, long y_extent);
+void initDetector(ParticleDetector* detector, ParticleInfo* particle, double distance);
