@@ -14,7 +14,7 @@ struct integrator {
     static const double b4[];
     static const double b5[];
 
-    double *accelx, *accely, *accelz;
+    Vector3 *accel;
     double *dt;
     bool started = false;
 };
@@ -24,5 +24,5 @@ integrator* makeIntegrator(long N);
 void step(
         integrator* method,
         ParticleState* state, FieldStructure* field,
-        void (*accelFunc)(ParticleState*, FieldStructure*, double*, double*, double*)
+        void (*accelFunc)(ParticleState*, FieldStructure*, Vector3*)
     );

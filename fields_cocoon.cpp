@@ -3,13 +3,13 @@
 void CocoonField::initFields() {
     #pragma omp parallel for
     for(long j = 0; j < this->N; j++) {
-        this->Ex[j] = 0.0;
-        this->Ey[j] = 0.0;
-        this->Ez[j] = 0.0;
+        this->E[j].x = 0.0;
+        this->E[j].y = 0.0;
+        this->E[j].z = 0.0;
 
-        this->Bx[j] = 0.0;
-        this->By[j] = 0.0;
-        this->Bz[j] = 0.0;
+        this->B[j].x = 0.0;
+        this->B[j].y = 0.0;
+        this->B[j].z = 0.0;
     }
 }
 
@@ -18,12 +18,12 @@ void CocoonField::getFields(ParticleState* state) {
     for(long j = 0; j < this->N; j++) {
         if(state->running[j])
         {
-            double Rscaled = sqrt(state->posX[j]*state->posX[j] + state->posY[j]*state->posY[j]) / this->r_scale;
-            double Zscaled = (state->posZ[j] - 10 * this->z_scale/2)/this->z_scale;
+            double Rscaled = sqrt(state->pos[j].x*state->pos[j].x + state->pos[j].y*state->pos[j].y) / this->r_scale;
+            double Zscaled = (state->pos[j].z - 10 * this->z_scale/2)/this->z_scale;
             double BphiOnR = this->B_strength * exp(-Rscaled*Rscaled - Zscaled*Zscaled) / this->r_scale;
 
-            this->Bx[j] = - BphiOnR * state->posY[j];
-            this->By[j] = + BphiOnR * state->posX[j];
+            this->B[j].x = - BphiOnR * state->pos[j].y;
+            this->B[j].y = + BphiOnR * state->pos[j].x;
         }
     }
 }
@@ -31,13 +31,9 @@ void CocoonField::getFields(ParticleState* state) {
 CocoonField* initCocoonField(double strength, double radius, double length, long N) {
     CocoonField* field = new CocoonField();
     field->N = N;
-    field->Ex = new double[N];
-    field->Ey = new double[N];
-    field->Ez = new double[N];
+    field->E = new Vector3[N];
 
-    field->Bx = new double[N];
-    field->By = new double[N];
-    field->Bz = new double[N];
+    field->B = new Vector3[N];
 
     field->B_strength = strength;
     field->r_scale = radius;

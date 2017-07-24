@@ -10,17 +10,13 @@ void initParticleState(ParticleState* state, ParticleSource* source) {
     long N = source->x_extent * source->y_extent;
     state->particleInfo = source->particleInfo;
     
-    state->posX = new double[N];
-    state->posY = new double[N];
-    state->posZ = new double[N];
+    state->pos = new Vector3[N];
 
-    state->velX = new double[N];
-    state->velY = new double[N];
-    state->velZ = new double[N];
+    state->vel = new Vector3[N];
 
     state->running = new bool[N];
 
-    memset(state->running, true, sizeof(bool)*N);
+    memset(state->running, true, N*sizeof(bool));
 
     state->N = N;
     state->N_running = N;
@@ -40,3 +36,4 @@ void initDetector(ParticleDetector* detector, ParticleInfo* particle, double dis
     detector->particleInfo = particle;
     detector->distance = distance;
 }
+

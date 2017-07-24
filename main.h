@@ -25,6 +25,6 @@ void print_status_raw(ParticleState* state);
 
 int main(int argc, char *argv[]);
 
-void accel(ParticleState* state, FieldStructure* fields, double* accx, double* accy, double* accz);
+void accel(ParticleState* state, FieldStructure* fields, Vector3* acc);
 
 void invalidateStates(ParticleState* state);

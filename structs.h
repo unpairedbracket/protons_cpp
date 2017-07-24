@@ -2,6 +2,10 @@
 
 #include <cstring>
 
+struct Vector3 {
+    double x, y, z;
+};
+
 struct ParticleInfo {
     double mass;
     double charge;
@@ -11,8 +15,8 @@ struct ParticleInfo {
 
 struct ParticleState {
     ParticleInfo *particleInfo;
-    double *posX, *posY, *posZ;
-    double *velX, *velY, *velZ;
+    Vector3 *pos;
+    Vector3 *vel;
     bool *running;
     long N;
     long N_running;

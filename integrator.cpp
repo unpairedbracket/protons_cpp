@@ -12,9 +12,7 @@ const double integrator::b5[] = {5179.0/57600.0, 0.0, 7571.0/16695.0, 393.0/640.
 
 integrator* makeIntegrator(long N) {
     integrator* method = new integrator();
-    method->accelx = new double[N];
-    method->accely = new double[N];
-    method->accelz = new double[N];
+    method->accel = new Vector3[N];
     method->dt = new double[N];
     return method;
 }
@@ -22,22 +20,22 @@ integrator* makeIntegrator(long N) {
 void step(
         integrator* method,
         ParticleState* state, FieldStructure* field,
-        void (*accelFunc)(ParticleState*, FieldStructure*, double*, double*, double*)
+        void (*accelFunc)(ParticleState*, FieldStructure*, Vector3*)
     ) {
 
-    accelFunc(state, field, method->accelx, method->accely, method->accelz);
+    accelFunc(state, field, method->accel);
     
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
         if(state->running[j])
         {
-            state->posX[j] += state->velX[j] * method->dt[j];
-            state->posY[j] += state->velY[j] * method->dt[j];
-            state->posZ[j] += state->velZ[j] * method->dt[j];
+            state->pos[j].x += state->vel[j].x * method->dt[j];
+            state->pos[j].y += state->vel[j].y * method->dt[j];
+            state->pos[j].z += state->vel[j].z * method->dt[j];
 
-            state->velX[j] += method->accelx[j] * method->dt[j];
-            state->velY[j] += method->accely[j] * method->dt[j];
-            state->velZ[j] += method->accelz[j] * method->dt[j];
+            state->vel[j].x += method->accel[j].x * method->dt[j];
+            state->vel[j].y += method->accel[j].y * method->dt[j];
+            state->vel[j].z += method->accel[j].z * method->dt[j];
         }
     }
 }

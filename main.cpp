@@ -47,9 +47,9 @@ int main(int argc, char *argv[]) {
 
     #pragma omp parallel for
     for(long j = 0; j < N; j++) {
-        state.posX[j] += source.distance * state.velX[j] / state.velZ[j]; 
-        state.posY[j] += source.distance * state.velY[j] / state.velZ[j];
-        state.posZ[j] += source.distance;
+        state.pos[j].x += source.distance * state.vel[j].x / state.vel[j].z; 
+        state.pos[j].y += source.distance * state.vel[j].y / state.vel[j].z;
+        state.pos[j].z += source.distance;
     }
 
     print_status(&state);
@@ -109,15 +109,15 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void accel(ParticleState* state, FieldStructure* fields, double* accx, double* accy, double* accz) {
+void accel(ParticleState* state, FieldStructure* fields, Vector3* acc) {
     fields->getFields(state);
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
         if(state->running[j])
         {
-            accx[j] = state->particleInfo->qmratio * ( fields->Ex[j] + state->velY[j] * fields->Bz[j] - state->velZ[j] * fields->By[j] ); // aX = q/m ( vy Bz - vz By );
-            accy[j] = state->particleInfo->qmratio * ( fields->Ey[j] + state->velZ[j] * fields->Bx[j] - state->velX[j] * fields->Bz[j] ); // aY = q/m ( vz Bx - vx Bz );
-            accz[j] = state->particleInfo->qmratio * ( fields->Ez[j] + state->velX[j] * fields->By[j] - state->velY[j] * fields->Bx[j] ); // aZ = q/m ( vx By - vy Bx );
+            acc[j].x = state->particleInfo->qmratio * ( fields->E[j].x + state->vel[j].y * fields->B[j].z - state->vel[j].z * fields->B[j].y ); // aX = q/m ( vy Bz - vz By );
+            acc[j].y = state->particleInfo->qmratio * ( fields->E[j].y + state->vel[j].z * fields->B[j].x - state->vel[j].x * fields->B[j].z ); // aY = q/m ( vz Bx - vx Bz );
+            acc[j].z = state->particleInfo->qmratio * ( fields->E[j].z + state->vel[j].x * fields->B[j].y - state->vel[j].y * fields->B[j].x ); // aZ = q/m ( vx By - vy Bx );
         }
     }
 }
@@ -127,7 +127,7 @@ void invalidateStates(ParticleState* particles) {
     for(long j = 0; j < particles->N; j++) {
         if(particles->running[j])
         {
-            if(particles->posZ[j] > 10 * 0.001) {
+            if(particles->pos[j].z > 10 * 0.001) {
                 particles->running[j] = false;
                 #pragma omp atomic
                 particles->N_running--;
@@ -138,9 +138,9 @@ void invalidateStates(ParticleState* particles) {
 
 void initPos(ParticleSource* sourceInfo, ParticleState* particles) {
     for(long i = 0; i < particles->N; i++) {
-        particles->posX[i] = 0;
-        particles->posY[i] = 0;
-        particles->posZ[i] = -sourceInfo->distance;
+        particles->pos[i].x = 0;
+        particles->pos[i].y = 0;
+        particles->pos[i].z = -sourceInfo->distance;
     }
 }
 
@@ -157,15 +157,15 @@ void initVel(ParticleSource* sourceInfo, ParticleState* particles) {
         double angleX = (2*j / ((double)sourceInfo->x_extent-1) - 1) * sourceInfo->divergence;
         double angleY = (2*k / ((double)sourceInfo->y_extent-1) - 1) * sourceInfo->divergence;
 
-        particles->velX[i] = speed * sin(angleX);
-        particles->velY[i] = speed * sin(angleY);
-        particles->velZ[i] = speed * sqrt(cos(angleX + angleY) * cos(angleX - angleY));
+        particles->vel[i].x = speed * sin(angleX);
+        particles->vel[i].y = speed * sin(angleY);
+        particles->vel[i].z = speed * sqrt(cos(angleX + angleY) * cos(angleX - angleY));
     }
 }
 
 void print_status(ParticleState* state) {
     for(long i = 0; i < 3; i++) {//state->N; i++) {
-        printf("pos = [%f, %f, %f]; vel = [%f, %f, %f]\n", state->posX[i], state->posY[i], state->posZ[i], state->velX[i], state->velY[i], state->velZ[i]);
+        printf("pos = [%f, %f, %f]; vel = [%f, %f, %f]\n", state->pos[i].x, state->pos[i].y, state->pos[i].z, state->vel[i].x, state->vel[i].y, state->vel[i].z);
     }
 }
 
@@ -173,14 +173,14 @@ void print_status_raw(ParticleState* state) {
     std::ofstream posfile;
     posfile.open("pos.txt");
     for(long i = 0; i < state->N; i++) {
-        posfile << state->posX[i] << "," << state->posY[i] << "," << state->posZ[i] << std::endl;
+        posfile << state->pos[i].x << "," << state->pos[i].y << "," << state->pos[i].z << std::endl;
     }
     posfile.close();
     
     std::ofstream velfile;
     velfile.open("vel.txt");
     for(long i = 0; i < state->N; i++) {
-        velfile << state->velX[i] << "," << state->velY[i] << "," << state->velZ[i] << std::endl;
+        velfile << state->vel[i].x << "," << state->vel[i].y << "," << state->vel[i].z << std::endl;
     }
     velfile.close();
 }
