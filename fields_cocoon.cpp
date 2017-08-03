@@ -3,13 +3,8 @@
 void CocoonField::initFields() {
     #pragma omp parallel for
     for(long j = 0; j < this->N; j++) {
-        this->E[j].x = 0.0;
-        this->E[j].y = 0.0;
-        this->E[j].z = 0.0;
-
-        this->B[j].x = 0.0;
-        this->B[j].y = 0.0;
-        this->B[j].z = 0.0;
+        this->E[j] = { 0.0, 0.0, 0.0 };
+        this->B[j] = { 0.0, 0.0, 0.0 };
     }
 }
 
@@ -31,8 +26,8 @@ void CocoonField::getFields(ParticleState* state) {
 CocoonField* initCocoonField(double strength, double radius, double length, long N) {
     CocoonField* field = new CocoonField();
     field->N = N;
-    field->E = new Vector3[N];
 
+    field->E = new Vector3[N];
     field->B = new Vector3[N];
 
     field->B_strength = strength;

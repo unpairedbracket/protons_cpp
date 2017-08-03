@@ -83,11 +83,7 @@ int main(int argc, char *argv[]) {
             );
         invalidateStates(&state);
         end = std::chrono::steady_clock::now();
-        //printf("After iteration %ld\n", i+1);
-        //print_status(state);
-        //printf("\n");
         double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
-        //std::cout << "Time difference = " << nanoTaken/1000.0 << " us" <<std::endl;
         sumTimes += nanoTaken;
         sumSqTimes += nanoTaken*nanoTaken;
         printf("Iteration %li finished, %li particles still running\n", i, state.N_running);
@@ -127,7 +123,10 @@ void invalidateStates(ParticleState* particles) {
     for(long j = 0; j < particles->N; j++) {
         if(particles->running[j])
         {
-            if(particles->pos[j].z > 10 * 0.001) {
+            if(particles->pos[j].z > 10 * 0.001
+            || particles->pos[j].x*particles->pos[j].x + particles->pos[j].y*particles->pos[j].y > 0.001*0.001
+            || particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > 3E8*3E8
+            ) {
                 particles->running[j] = false;
                 #pragma omp atomic
                 particles->N_running--;
