@@ -14,6 +14,8 @@
 #include "integrator.h"
 #include "fields_cocoon.h"
 
+#include "graphics/window.h"
+
 constexpr double pi() { return std::atan(1)*4; }
 
 void initPos(ParticleSource* sourceInfo, ParticleState* particles);

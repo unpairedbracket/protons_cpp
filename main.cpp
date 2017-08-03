@@ -73,6 +73,12 @@ int main(int argc, char *argv[]) {
 
     long i;
 
+    openWindow("shaders/shader.vert", "shaders/shader.frag");
+    setupMatrix(source.distance, detector.distance, source.divergence);
+    setupBuffers(&state.pos[0].x, state.running, state.N);
+    updateBuffers(&state.pos[0].x, state.running, state.N);
+    draw(state.N);
+
     for(i = 0; i < steps && state.N_running > 0; i++) {
         begin = std::chrono::steady_clock::now();
 
@@ -82,6 +88,8 @@ int main(int argc, char *argv[]) {
                 accel
             );
         invalidateStates(&state);
+        updateBuffers(&state.pos[0].x, state.running, state.N);
+        draw(state.N);
         end = std::chrono::steady_clock::now();
         double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
         sumTimes += nanoTaken;
