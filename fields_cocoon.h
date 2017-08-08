@@ -11,5 +11,3 @@ struct CocoonField : FieldStructure {
     void initFields() override;
     void getFields(ParticleState* state) override;
 };
-
-CocoonField* initCocoonField(double strength, double radius, double length, long N);

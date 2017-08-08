@@ -13,6 +13,7 @@
 #include "structs.h"
 #include "integrator.h"
 #include "fields_cocoon.h"
+#include "config_parser.h"
 
 #include "graphics/window.h"
 

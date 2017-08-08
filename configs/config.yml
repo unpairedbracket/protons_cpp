@@ -1,0 +1,28 @@
+---
+particleType:
+    charge: 1E-19
+    mass: 1E-27
+
+source:
+    type: square
+    distance: 0.02
+    divergence: 0.05
+    energy: 40e6
+    number_x: 100
+    number_y: 100
+
+field:
+    type: cocoon
+    length_scale: 0.001
+    radial_scale: 0.0005
+    B_scale: 25
+
+detector:
+    type: file_output
+    distance: 1
+    
+integrator:
+    type: RK4
+    relativistic: false
+    step_size: 1.14e-12
+...

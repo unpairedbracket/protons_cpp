@@ -3,8 +3,10 @@
 int main(int argc, char *argv[]) {
     const double mass = 1.6726217E-27;
     const double charge = 1.6021766208E-19;
-    ParticleInfo protons;
-    initParticle(&protons, mass, charge);
+    //ParticleInfo* protons = getParticleInfo();
+    //initParticle(&protons, mass, charge);
+    load_config("configs/config.yml");
+    ParticleInfo* protons = getParticleInfo();
 
     long n_x;
     long n_y;
@@ -24,7 +26,7 @@ int main(int argc, char *argv[]) {
     double sourceDivergence = 0.04; //Radians from axis, i.e. pi/2 for hemisphere-ish. Must currently be smaller than pi/4 due to dodgy implementation.
     double sourceEnergy = 40E6 * charge; //Source energy, joules
     ParticleSource source;
-    initSource(&source, &protons, sourceDistance, sourceDivergence, sourceEnergy, n_x, n_y);
+    initSource(&source, protons, sourceDistance, sourceDivergence, sourceEnergy, n_x, n_y);
 
     ParticleState state;
     initParticleState(&state, &source);
@@ -34,16 +36,13 @@ int main(int argc, char *argv[]) {
     print_status(&state);
 
     //Object
-    double objectLength = 0.001; //Distance from front object plane to back object plane, metres
-    double objectRadius = 0.0005; //Transverse size of object
-    double fieldStrength = 25;
-    CocoonField* field = initCocoonField(fieldStrength, objectRadius, objectLength, state.N);
-    field->initFields();
+    FieldStructure* field = getFieldsInfo();
+    initFieldArrays(field, state.N);
 
     //Detector
     double detectorDistance = 1; //Distance from back object plane to image plane
     ParticleDetector detector;
-    initDetector(&detector, &protons, detectorDistance);
+    initDetector(&detector, protons, detectorDistance);
 
     #pragma omp parallel for
     for(long j = 0; j < N; j++) {

@@ -23,16 +23,3 @@ void CocoonField::getFields(ParticleState* state) {
     }
 }
 
-CocoonField* initCocoonField(double strength, double radius, double length, long N) {
-    CocoonField* field = new CocoonField();
-    field->N = N;
-
-    field->E = new Vector3[N];
-    field->B = new Vector3[N];
-
-    field->B_strength = strength;
-    field->r_scale = radius;
-    field->z_scale = length;
-    
-    return field;
-}

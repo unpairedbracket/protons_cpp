@@ -10,3 +10,5 @@ struct FieldStructure {
     virtual void initFields() = 0;
     virtual void getFields(ParticleState* state) = 0;
 };
+
+void initFieldArrays(FieldStructure* field, long N);

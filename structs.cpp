@@ -1,9 +1,19 @@
 #include "structs.h"
 
-void initParticle(ParticleInfo* particle, double mass, double charge) {
-    particle->mass = mass;
-    particle->charge = charge;
-    particle->qmratio = charge/mass;
+void initParticle(ParticleInfo* particle) {
+    if(particle->mass == 0)
+    {
+        printf("Attempt to use massless particle. This will not work well.\n");
+        printf("Make sure your particle is intialised\n");
+        particle->qmratio = 0;
+        return;
+    }
+
+    if(particle->charge == 0) {
+        printf("Attempt to use neutral particle. Nothing will happen!");
+    }
+
+    particle->qmratio = particle->charge/particle->mass;
 }
 
 void initParticleState(ParticleState* state, ParticleSource* source) {

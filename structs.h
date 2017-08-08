@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <cstdio>
 
 struct Vector3 {
     double x, y, z;
@@ -37,7 +38,7 @@ struct ParticleDetector {
     double distance;
 };
 
-void initParticle(ParticleInfo* particle, double mass, double charge);
+void initParticle(ParticleInfo* particle);
 void initParticleState(ParticleState* state, ParticleSource* source);
 void shadowParticleState(ParticleState* state, ParticleState* other);
 void initSource(ParticleSource* source, ParticleInfo* particle, double distance, double divergence, double energy, long x_extent, long y_extent);
