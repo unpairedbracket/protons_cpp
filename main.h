@@ -28,6 +28,6 @@ void print_status_raw(ParticleState* state);
 
 int main(int argc, char *argv[]);
 
-void accel(ParticleState* state, FieldStructure* fields, Vector3* acc);
+void accel(ParticleState* state, FieldStructure* fields);
 
 void invalidateStates(ParticleState* state);

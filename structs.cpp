@@ -11,8 +11,8 @@ void initParticleState(ParticleState* state, ParticleSource* source) {
     state->particleInfo = source->particleInfo;
     
     state->pos = new Vector3[N];
-
     state->vel = new Vector3[N];
+    state->acc = new Vector3[N];
 
     state->running = new bool[N];
 
@@ -20,6 +20,19 @@ void initParticleState(ParticleState* state, ParticleSource* source) {
 
     state->N = N;
     state->N_running = N;
+}
+
+void shadowParticleState(ParticleState* state, ParticleState* other) {
+    state->particleInfo = other->particleInfo;
+    
+    state->pos = new Vector3[other->N];
+    state->vel = new Vector3[other->N];
+    state->acc = new Vector3[other->N];
+
+    state->running = other->running;
+
+    state->N = other->N;
+    state->N_running = 0;
 }
 
 void initSource(ParticleSource* source, ParticleInfo* particle, double distance, double divergence, double energy, long x_extent, long y_extent) {

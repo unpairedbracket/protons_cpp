@@ -60,16 +60,15 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point begin;
     std::chrono::steady_clock::time_point end;
 
-    integrator* RKDPIntegrator = makeIntegrator(N);
+    Integrator* integrator = new RK4Integrator(&state);
+    integrator->init(N);
 
     double sumTimes, sumSqTimes;
 
     double dt_0 = 0.0001 / 87538948.0;
 
-    #pragma omp parallel for
-    for(long j = 0; j < N; j++) {
-        RKDPIntegrator->dt[j] = dt_0;
-    }
+    integrator->setInitTimestep(dt_0);
+    ((RK4Integrator*)integrator)->accelFunc = accel; // Hack hack hack
 
     long i;
 
@@ -84,11 +83,7 @@ int main(int argc, char *argv[]) {
     for(i = 0; i < steps && state.N_running > 0; i++) {
         begin = std::chrono::steady_clock::now();
 
-        step(
-                RKDPIntegrator,
-                &state, field,
-                accel
-            );
+        integrator->step(&state, field);
         invalidateStates(&state);
 
         if(USE_GL) {
@@ -121,18 +116,20 @@ int main(int argc, char *argv[]) {
 
     print_status(&state);
     print_status_raw(&state);
+
+    integrator->deinit();
     return 0;
 }
 
-void accel(ParticleState* state, FieldStructure* fields, Vector3* acc) {
+void accel(ParticleState* state, FieldStructure* fields) {
     fields->getFields(state);
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
         if(state->running[j])
         {
-            acc[j].x = state->particleInfo->qmratio * ( fields->E[j].x + state->vel[j].y * fields->B[j].z - state->vel[j].z * fields->B[j].y ); // aX = q/m ( vy Bz - vz By );
-            acc[j].y = state->particleInfo->qmratio * ( fields->E[j].y + state->vel[j].z * fields->B[j].x - state->vel[j].x * fields->B[j].z ); // aY = q/m ( vz Bx - vx Bz );
-            acc[j].z = state->particleInfo->qmratio * ( fields->E[j].z + state->vel[j].x * fields->B[j].y - state->vel[j].y * fields->B[j].x ); // aZ = q/m ( vx By - vy Bx );
+            state->acc[j].x = state->particleInfo->qmratio * ( fields->E[j].x + state->vel[j].y * fields->B[j].z - state->vel[j].z * fields->B[j].y );
+            state->acc[j].y = state->particleInfo->qmratio * ( fields->E[j].y + state->vel[j].z * fields->B[j].x - state->vel[j].x * fields->B[j].z );
+            state->acc[j].z = state->particleInfo->qmratio * ( fields->E[j].z + state->vel[j].x * fields->B[j].y - state->vel[j].y * fields->B[j].x );
         }
     }
 }

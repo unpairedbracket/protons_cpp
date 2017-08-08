@@ -1,44 +1,153 @@
 #include "integrator.h"
 
-const double integrator::a2[] = {1.0/5.0};
-const double integrator::a3[] = {3.0/40.0, 9.0/40.0};
-const double integrator::a4[] = {44.0/45.0, -56.0/15.0, 32.0/9.0};
-const double integrator::a5[] = {19372.0/6561.0, -25360.0/2187.0, 64448.0/6561.0, -212.0/729.0};
-const double integrator::a6[] = {9017.0/3168.0, -355.0/33.0, 46732.0/5247.0, 49.0/176.0, -5103.0/18656.0};
-const double integrator::a7[] = {35.0/384.0, 0.0, 500.0/1113.0, 125.0/192.0, -2187.0/6784.0, 11.0/84.0};
+const double RKDPIntegrator::a2[] = {1.0/5.0};
+const double RKDPIntegrator::a3[] = {3.0/40.0, 9.0/40.0};
+const double RKDPIntegrator::a4[] = {44.0/45.0, -56.0/15.0, 32.0/9.0};
+const double RKDPIntegrator::a5[] = {19372.0/6561.0, -25360.0/2187.0, 64448.0/6561.0, -212.0/729.0};
+const double RKDPIntegrator::a6[] = {9017.0/3168.0, -355.0/33.0, 46732.0/5247.0, 49.0/176.0, -5103.0/18656.0};
+const double RKDPIntegrator::a7[] = {35.0/384.0, 0.0, 500.0/1113.0, 125.0/192.0, -2187.0/6784.0, 11.0/84.0};
 
-const double integrator::b4[] = {35.0/384.0, 0.0, 500.0/1113.0, 125.0/192.0, -2187.0/6784.0, 11.0/84.0};
-const double integrator::b5[] = {5179.0/57600.0, 0.0, 7571.0/16695.0, 393.0/640.0, -92097.0/339200.0, 187.0/2100.0, 1.0/40.0};
+const double RKDPIntegrator::b4[] = {35.0/384.0, 0.0, 500.0/1113.0, 125.0/192.0, -2187.0/6784.0, 11.0/84.0};
+const double RKDPIntegrator::b5[] = {5179.0/57600.0, 0.0, 7571.0/16695.0, 393.0/640.0, -92097.0/339200.0, 187.0/2100.0, 1.0/40.0};
 
-integrator* makeIntegrator(long N) {
-    integrator* method = new integrator();
-    method->accel = new Vector3[N];
-    method->dt = new double[N];
-    return method;
+void EulerIntegrator::init(long N) {
 }
 
-void step(
-        integrator* method,
-        ParticleState* state, FieldStructure* field,
-        void (*accelFunc)(ParticleState*, FieldStructure*, Vector3*)
-    ) {
+void EulerIntegrator::deinit() {
+}
 
-    accelFunc(state, field, method->accel);
+void EulerIntegrator::setInitTimestep(double dt) {
+    this->dt = dt;
+}
+
+void EulerIntegrator::step(ParticleState* state, FieldStructure* field) {
+
+    accelFunc(state, field);
     
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
         if(state->running[j])
         {
-            state->pos[j].x += state->vel[j].x * method->dt[j];
-            state->pos[j].y += state->vel[j].y * method->dt[j];
-            state->pos[j].z += state->vel[j].z * method->dt[j];
+            state->pos[j].x += state->vel[j].x * dt;
+            state->pos[j].y += state->vel[j].y * dt;
+            state->pos[j].z += state->vel[j].z * dt;
 
-            state->vel[j].x += method->accel[j].x * method->dt[j];
-            state->vel[j].y += method->accel[j].y * method->dt[j];
-            state->vel[j].z += method->accel[j].z * method->dt[j];
+            state->vel[j].x += state->acc[j].x * dt;
+            state->vel[j].y += state->acc[j].y * dt;
+            state->vel[j].z += state->acc[j].z * dt;
         }
     }
 }
+
+RK4Integrator::RK4Integrator(ParticleState* state) {
+   state1 = new ParticleState();
+   state2 = new ParticleState();
+   state3 = new ParticleState();
+
+   shadowParticleState(state1, state);
+   shadowParticleState(state2, state);
+   shadowParticleState(state3, state);
+}
+
+void RK4Integrator::init(long N) {
+}
+
+void RK4Integrator::deinit() {
+}
+
+void RK4Integrator::setInitTimestep(double dt) {
+    this->dt = dt;
+}
+
+void RK4Integrator::step(ParticleState* state, FieldStructure* field) {
+
+    accelFunc(state, field);
+    
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state1->pos[j].x = state->pos[j].x + 1/2 * state->vel[j].x * dt;
+            state1->pos[j].y = state->pos[j].y + 1/2 * state->vel[j].y * dt;
+            state1->pos[j].z = state->pos[j].z + 1/2 * state->vel[j].z * dt;
+
+            state1->vel[j].x = state->vel[j].x + 1/2 * state->acc[j].x * dt;
+            state1->vel[j].y = state->vel[j].y + 1/2 * state->acc[j].y * dt;
+            state1->vel[j].z = state->vel[j].z + 1/2 * state->acc[j].z * dt;
+        }
+    }
+
+    accelFunc(state1, field);
+    
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state2->pos[j].x = state->pos[j].x + 1/2 * state1->vel[j].x * dt;
+            state2->pos[j].y = state->pos[j].y + 1/2 * state1->vel[j].y * dt;
+            state2->pos[j].z = state->pos[j].z + 1/2 * state1->vel[j].z * dt;
+
+            state2->vel[j].x = state->vel[j].x + 1/2 * state1->acc[j].x * dt;
+            state2->vel[j].y = state->vel[j].y + 1/2 * state1->acc[j].y * dt;
+            state2->vel[j].z = state->vel[j].z + 1/2 * state1->acc[j].z * dt;
+        }
+    }
+
+    accelFunc(state2, field);
+    
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state3->pos[j].x = state->pos[j].x + state2->vel[j].x * dt;
+            state3->pos[j].y = state->pos[j].y + state2->vel[j].y * dt;
+            state3->pos[j].z = state->pos[j].z + state2->vel[j].z * dt;
+
+            state3->vel[j].x = state->vel[j].x + state2->acc[j].x * dt;
+            state3->vel[j].y = state->vel[j].y + state2->acc[j].y * dt;
+            state3->vel[j].z = state->vel[j].z + state2->acc[j].z * dt;
+        }
+    }
+
+    accelFunc(state3, field);
+    
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state->pos[j].x += (state->vel[j].x + 2*state1->vel[j].x + 2*state2->vel[j].x + state3->vel[j].x) * dt / 6;
+            state->pos[j].y += (state->vel[j].y + 2*state1->vel[j].y + 2*state2->vel[j].y + state3->vel[j].y) * dt / 6;
+            state->pos[j].z += (state->vel[j].z + 2*state1->vel[j].z + 2*state2->vel[j].z + state3->vel[j].z) * dt / 6;
+
+            state->vel[j].x += (state->acc[j].x + 2*state1->acc[j].x + 2*state2->acc[j].x + state3->acc[j].x) * dt / 6;
+            state->vel[j].y += (state->acc[j].y + 2*state1->acc[j].y + 2*state2->acc[j].y + state3->acc[j].y) * dt / 6;
+            state->vel[j].z += (state->acc[j].z + 2*state1->acc[j].z + 2*state2->acc[j].z + state3->acc[j].z) * dt / 6;
+        }
+    }
+
+}
+
+void RKDPIntegrator::init(long N) {
+    this->dt = new double[N];
+    this->N = N;
+}
+
+void RKDPIntegrator::deinit() {
+    delete[] this->dt;
+}
+
+void RKDPIntegrator::setInitTimestep(double dt_0) {
+    #pragma omp parallel for
+    for(long j = 0; j < this->N; j++) {
+        this->dt[j] = dt_0;
+    }
+
+}
+
+void RKDPIntegrator::step(ParticleState* state, FieldStructure* field) {
+
+}
+
 //function [posOut, velOut, accelOut, dtOut] = RKDPIntegrate(posIn, velIn, accelIn, dt, func)
 //    global verbose
     //%% Integration params
