@@ -96,8 +96,8 @@ int updateBuffers(double pos[], bool running[], long N) {
 	return 0;
 }
     
-int draw(int N) {
-    //do {
+int draw(int N, bool wait) {
+    do {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(programID);
@@ -133,8 +133,8 @@ int draw(int N) {
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
-    //}   while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-    //           glfwWindowShouldClose(window) == 0 );
+    }   while( wait && glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+               glfwWindowShouldClose(window) == 0 );
     
     return 0;
 }
