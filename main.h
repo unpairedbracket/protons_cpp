@@ -17,6 +17,7 @@
 #include "graphics/window.h"
 
 constexpr double pi() { return std::atan(1)*4; }
+const bool USE_GL = true;
 
 void initPos(ParticleSource* sourceInfo, ParticleState* particles);
 

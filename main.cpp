@@ -73,11 +73,13 @@ int main(int argc, char *argv[]) {
 
     long i;
 
-    openWindow("shaders/shader.vert", "shaders/shader.frag");
-    setupMatrix(source.distance, detector.distance, source.divergence);
-    setupBuffers(&state.pos[0].x, state.running, state.N);
-    updateBuffers(&state.pos[0].x, state.running, state.N);
-    draw(state.N);
+    if(USE_GL) {
+        openWindow("shaders/shader.vert", "shaders/shader.frag");
+        setupMatrix(source.distance, detector.distance * 1.01, source.divergence);
+        setupBuffers(&state.pos[0].x, state.running, state.N);
+        updateBuffers(&state.pos[0].x, state.running, state.N);
+        draw(state.N);
+    }
 
     for(i = 0; i < steps && state.N_running > 0; i++) {
         begin = std::chrono::steady_clock::now();
@@ -88,8 +90,12 @@ int main(int argc, char *argv[]) {
                 accel
             );
         invalidateStates(&state);
-        updateBuffers(&state.pos[0].x, state.running, state.N);
-        draw(state.N);
+
+        if(USE_GL) {
+            updateBuffers(&state.pos[0].x, state.running, state.N);
+            draw(state.N);
+        }
+
         end = std::chrono::steady_clock::now();
         double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
         sumTimes += nanoTaken;
@@ -97,14 +103,19 @@ int main(int argc, char *argv[]) {
         printf("Iteration %li finished, %li particles still running\n", i, state.N_running);
     }
     printf("%li iterations taken \n", i);
-    /*
+    
     #pragma omp parallel for
     for(long j = 0; j < N; j++) {
-        state.posX[j] += state.velX[j] / state.velZ[j] * detector.distance;
-        state.posY[j] += state.velY[j] / state.velZ[j] * detector.distance;
-        state.posZ[j] += detector.distance;
+        state.pos[j].x += (detector.distance - state.pos[j].z) * state.vel[j].x / state.vel[j].z;
+        state.pos[j].y += (detector.distance - state.pos[j].z) * state.vel[j].y / state.vel[j].z;
+        state.pos[j].z += (detector.distance - state.pos[j].z);
     }
-    */
+    
+    if(USE_GL) {
+        updateBuffers(&state.pos[0].x, state.running, state.N);
+        draw(state.N, true);
+    }
+    
     std::cout << "Average time taken: " << sumTimes / (1000.0 * i) << " us (" << sumTimes / (1000.0 * i * state.N) << " us per particle)" << std::endl;
     std::cout << "Standard Deviation: " << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / 1000.0 << " us (" << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / (1000.0 * state.N) << " us per particle)" << std::endl;
 
