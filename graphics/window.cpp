@@ -28,7 +28,7 @@ int openWindow(const char * vertex_file_path,const char * fragment_file_path) {
     }
 
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glEnable(GL_PROGRAM_POINT_SIZE);
