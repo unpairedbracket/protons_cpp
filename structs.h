@@ -24,22 +24,12 @@ struct ParticleState {
     long N_running;
 };
 
-struct ParticleSource {
-    ParticleInfo *particleInfo;
-    double distance;
-    double divergence;
-    double energy;
-
-    long x_extent, y_extent;
-};
-
 struct ParticleDetector {
     ParticleInfo *particleInfo;
     double distance;
 };
 
 void initParticle(ParticleInfo* particle);
-void initParticleState(ParticleState* state, ParticleSource* source);
+void initParticleState(ParticleState* state, ParticleInfo* particleType, long N);
 void shadowParticleState(ParticleState* state, ParticleState* other);
-void initSource(ParticleSource* source, ParticleInfo* particle, double distance, double divergence, double energy, long x_extent, long y_extent);
 void initDetector(ParticleDetector* detector, ParticleInfo* particle, double distance);

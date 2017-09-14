@@ -53,7 +53,115 @@ ParticleInfo* getParticleInfo() {
     return particle;
 }
 
-ParticleSource* getSourceInfo(ParticleInfo* particleType);
+ParticleSource* getSourceInfo() {
+    
+    ParticleSource* source = nullptr;
+    YAML::Node sourceNode;
+    
+    if(!config["source"]) {
+        std::cout << "No source type specified. Defaulting to helix." << std::endl;
+        config["source"] = "helix";
+    }
+
+    sourceNode = config["source"];
+
+    if(sourceNode.IsScalar()) {
+        std::cout << "Source type only specified by name. Will use defaults for that type" << std::endl;
+        YAML::Node parentNode;
+        parentNode["type"] = sourceNode;
+        sourceNode = parentNode;
+    }
+
+    if(sourceNode.IsMap()) {
+        if(!sourceNode["type"]) {
+            std::cout << "No source type specified. Defaulting to cocoon." << std::endl;
+            sourceNode["type"] = "cocoon";
+        }
+
+        std::string sourceType = sourceNode["type"].as<std::string>();
+
+        if(!(sourceType.compare("square") == 0
+          || sourceType.compare("helix") == 0
+          )) {
+            std::cout << "Unsupported source type '" << sourceType << "'. Defaulting to helix." << std::endl;
+            sourceType = std::string("helix");
+        }
+
+        if(sourceType.compare("square") == 0) {
+            if(!sourceNode["N"]) {
+                std::cout << "No number of particles specified for source. Defaulting to 100x100" << std::endl;
+                sourceNode["N"] = YAML::Load("[100, 100]");
+            }
+            if(!sourceNode["N"].IsSequence() || sourceNode["N"].size() != 2) {
+                std::cout << "Wrong number of components of particle number specified: " << sourceNode["N"].size() << ". Expected 2: [x_number, y_number], defaulting to [100, 100]." << std::endl;
+                sourceNode["N"] = YAML::Load("[100, 100]");
+            }
+
+            if(!sourceNode["distance"]) {
+                std::cout << "No distance specified for source. Defaulting to 0.01" << std::endl;
+                sourceNode["distance"] = 0.01;
+            }
+
+            if(!sourceNode["divergence"]) {
+                std::cout << "No source divergence specified. Defaulting to 0.01 radian" << std::endl;
+                sourceNode["divergence"] = 0.01;
+            }
+
+            if(!sourceNode["energy"]) {
+                std::cout << "No source energy specified. Defaulting to 1 MeV" << std::endl;
+                sourceNode["energy"] = 1E6 * 1.6E-19;
+            }
+
+            SquareSource* squareSource = new SquareSource();
+            source = squareSource;
+ 
+            squareSource->x_extent = sourceNode["N"][0].as<long>();
+            squareSource->y_extent = sourceNode["N"][1].as<long>();
+            squareSource->distance = sourceNode["distance"].as<double>();
+            squareSource->divergence = sourceNode["divergence"].as<double>();
+            squareSource->energy = sourceNode["energy"].as<double>();
+        }
+        if(sourceType.compare("helix") == 0) {
+            if(!sourceNode["N"]) {
+                std::cout << "No number of particles specified for source. Defaulting to 10000" << std::endl;
+                sourceNode["N"] = 10000;
+            }
+
+            if(!sourceNode["distance"]) {
+                std::cout << "No distance specified for source. Defaulting to 0.01" << std::endl;
+                sourceNode["distance"] = 0.01;
+            }
+
+            if(!sourceNode["divergence"]) {
+                std::cout << "No source divergence specified. Defaulting to 0.01 radian" << std::endl;
+                sourceNode["divergence"] = 0.01;
+            }
+
+            if(!sourceNode["energy"]) {
+                std::cout << "No source energy specified. Defaulting to 1 MeV" << std::endl;
+                sourceNode["energy"] = 1E6 * 1.6E-19;
+            }
+
+            if(!sourceNode["pitch"]) {
+                std::cout << "No source pitch specified. Defaulting to golden ratio * 2 pi" << std::endl;
+                sourceNode["pitch"] = (1 + sqrt(5)) * pi();
+            }
+
+
+            HelixSource* helixSource = new HelixSource();
+            source = helixSource;
+ 
+            helixSource->N = sourceNode["N"].as<long>();
+            helixSource->distance = sourceNode["distance"].as<double>();
+            helixSource->divergence = sourceNode["divergence"].as<double>();
+            helixSource->energy = sourceNode["energy"].as<double>();
+            helixSource->dphi = sourceNode["pitch"].as<double>();
+        }
+    }
+
+    return source;
+}
+
 FieldStructure* getFieldsInfo() {
     FieldStructure* field = nullptr;
     YAML::Node fieldNode;
@@ -116,4 +224,71 @@ FieldStructure* getFieldsInfo() {
 }
 
 ParticleDetector* getParticleDetector();
+
+Integrator* getIntegrator() {
+    Integrator* integrator = nullptr;
+    YAML::Node integratorNode;
+    
+    if(!config["integrator"]) {
+        std::cout << "No integrator specified. Defaulting to RK4." << std::endl;
+        config["integrator"] = "RK4";
+    }
+
+    integratorNode = config["integrator"];
+
+    if(integratorNode.IsScalar()) {
+        std::cout << "Integrator only specified by name. Will use defaults for that type" << std::endl;
+        YAML::Node parentNode;
+        parentNode["type"] = integratorNode;
+        integratorNode = parentNode;
+    }
+
+    if(integratorNode.IsMap()) {
+        if(!integratorNode["type"]) {
+            std::cout << "No integrator type specified. Defaulting to RK4." << std::endl;
+            integratorNode["type"] = "RK4";
+        }
+
+        std::string integratorType = integratorNode["type"].as<std::string>();
+
+        if(!(integratorType.compare("euler") == 0
+          || integratorType.compare("Euler") == 0
+          || integratorType.compare("rk4") == 0
+          || integratorType.compare("RK4") == 0
+          || integratorType.compare("RKDP") == 0
+          )) {
+            std::cout << "Unsupported integrator type '" << integratorType << "'. Defaulting to RK4." << std::endl;
+            integratorType = std::string("RK4");
+        }
+
+        if(integratorType.compare("euler") == 0 || integratorType.compare("Euler") == 0) {
+            integrator = new EulerIntegrator();
+        } else if (integratorType.compare("rk4") == 0 || integratorType.compare("RK4") == 0) {
+            integrator = new RK4Integrator();
+        } else if (integratorType.compare("RKDP") == 0) {
+            integrator = new RKDPIntegrator();
+        }
+
+        if(!integratorNode["relativistic"]) {
+            if(config["relativistic"]) { 
+                std::cout << "Integrator inheriting relativistic preference from global setting." << std::endl;
+                integratorNode["relativistic"] = config["relativistic"];
+            } else {
+                std::cout << "Defaulting to non-relativistic algorithm." << std::endl;
+                integratorNode["relativistic"] = false;
+            }
+        }
+
+        if(!integratorNode["time_step"]) {
+            std::cout << "No time step specified." << std::endl;
+            integratorNode["time_step"] = 1E-10;
+        }
+
+        integrator->setInitTimestep(integratorNode["time_step"].as<double>());
+        integrator->setRelativistic(integratorNode["relativistic"].as<bool>());
+    }
+
+    return integrator;
+    
+}
 

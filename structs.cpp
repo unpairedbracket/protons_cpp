@@ -16,9 +16,8 @@ void initParticle(ParticleInfo* particle) {
     particle->qmratio = particle->charge/particle->mass;
 }
 
-void initParticleState(ParticleState* state, ParticleSource* source) {
-    long N = source->x_extent * source->y_extent;
-    state->particleInfo = source->particleInfo;
+void initParticleState(ParticleState* state, ParticleInfo* particleType, long N) {
+    state->particleInfo = particleType;
     
     state->pos = new Vector3[N];
     state->vel = new Vector3[N];
@@ -43,16 +42,6 @@ void shadowParticleState(ParticleState* state, ParticleState* other) {
 
     state->N = other->N;
     state->N_running = 0;
-}
-
-void initSource(ParticleSource* source, ParticleInfo* particle, double distance, double divergence, double energy, long x_extent, long y_extent) {
-    source->particleInfo = particle;
-    source->distance = distance;
-    source->divergence = divergence;
-    source->energy = energy;
-
-    source->x_extent = x_extent;
-    source->y_extent = y_extent;
 }
 
 void initDetector(ParticleDetector* detector, ParticleInfo* particle, double distance) {

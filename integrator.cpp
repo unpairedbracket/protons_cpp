@@ -7,10 +7,10 @@ const double RKDPIntegrator::a5[] = {19372.0/6561.0, -25360.0/2187.0, 64448.0/65
 const double RKDPIntegrator::a6[] = {9017.0/3168.0, -355.0/33.0, 46732.0/5247.0, 49.0/176.0, -5103.0/18656.0};
 const double RKDPIntegrator::a7[] = {35.0/384.0, 0.0, 500.0/1113.0, 125.0/192.0, -2187.0/6784.0, 11.0/84.0};
 
-const double RKDPIntegrator::b4[] = {35.0/384.0, 0.0, 500.0/1113.0, 125.0/192.0, -2187.0/6784.0, 11.0/84.0};
+const double RKDPIntegrator::b4[] = {35.0/384.0, 0.0, 500.0/1113.0, 125.0/192.0, -2187.0/6784.0, 11.0/84.0, 0};
 const double RKDPIntegrator::b5[] = {5179.0/57600.0, 0.0, 7571.0/16695.0, 393.0/640.0, -92097.0/339200.0, 187.0/2100.0, 1.0/40.0};
 
-void EulerIntegrator::init(long N) {
+void EulerIntegrator::initFromState(ParticleState* state) {
 }
 
 void EulerIntegrator::deinit() {
@@ -18,6 +18,10 @@ void EulerIntegrator::deinit() {
 
 void EulerIntegrator::setInitTimestep(double dt) {
     this->dt = dt;
+}
+
+void EulerIntegrator::setRelativistic(bool relativistic) {
+    this->accelFunc = relativistic ? accel_relativistic : accel;
 }
 
 void EulerIntegrator::step(ParticleState* state, FieldStructure* field) {
@@ -39,17 +43,14 @@ void EulerIntegrator::step(ParticleState* state, FieldStructure* field) {
     }
 }
 
-RK4Integrator::RK4Integrator(ParticleState* state) {
-   state1 = new ParticleState();
-   state2 = new ParticleState();
-   state3 = new ParticleState();
+void RK4Integrator::initFromState(ParticleState* state) {
+    state1 = new ParticleState();
+    state2 = new ParticleState();
+    state3 = new ParticleState();
 
-   shadowParticleState(state1, state);
-   shadowParticleState(state2, state);
-   shadowParticleState(state3, state);
-}
-
-void RK4Integrator::init(long N) {
+    shadowParticleState(state1, state);
+    shadowParticleState(state2, state);
+    shadowParticleState(state3, state);
 }
 
 void RK4Integrator::deinit() {
@@ -57,6 +58,10 @@ void RK4Integrator::deinit() {
 
 void RK4Integrator::setInitTimestep(double dt) {
     this->dt = dt;
+}
+
+void RK4Integrator::setRelativistic(bool relativistic) {
+    this->accelFunc = relativistic ? accel_relativistic : accel;
 }
 
 void RK4Integrator::step(ParticleState* state, FieldStructure* field) {
@@ -127,9 +132,31 @@ void RK4Integrator::step(ParticleState* state, FieldStructure* field) {
 
 }
 
-void RKDPIntegrator::init(long N) {
-    this->dt = new double[N];
-    this->N = N;
+void RKDPIntegrator::initFromState(ParticleState* state) {
+    this->lastIterationSuccess = new bool[state->N];
+    this->dt = new double[state->N];
+    this->N = state->N;
+
+    state1 = new ParticleState();
+    state2 = new ParticleState();
+    state3 = new ParticleState();
+    state4 = new ParticleState();
+    state5 = new ParticleState();
+    state6 = new ParticleState();
+    state7 = new ParticleState();
+    
+    shadowParticleState(state1, state);
+    shadowParticleState(state2, state);
+    shadowParticleState(state3, state);
+    shadowParticleState(state4, state);
+    shadowParticleState(state5, state);
+    shadowParticleState(state6, state);
+    shadowParticleState(state7, state);
+
+    #pragma omp parallel for
+    for(long j = 0; j < this->N; j++) {
+        this->dt[j] = dt_init;
+    }
 }
 
 void RKDPIntegrator::deinit() {
@@ -137,171 +164,360 @@ void RKDPIntegrator::deinit() {
 }
 
 void RKDPIntegrator::setInitTimestep(double dt_0) {
-    #pragma omp parallel for
-    for(long j = 0; j < this->N; j++) {
-        this->dt[j] = dt_0;
-    }
+    dt_init = dt_0;
+}
 
+void RKDPIntegrator::setRelativistic(bool relativistic) {
+    this->accelFunc = relativistic ? accel_relativistic : accel;
 }
 
 void RKDPIntegrator::step(ParticleState* state, FieldStructure* field) {
 
-}
+    accelFunc(state, field);
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state1->pos[j].x = state->pos[j].x;
+            state1->pos[j].y = state->pos[j].y;
+            state1->pos[j].z = state->pos[j].z;
 
-//function [posOut, velOut, accelOut, dtOut] = RKDPIntegrate(posIn, velIn, accelIn, dt, func)
-//    global verbose
-    //%% Integration params
-    //% Coefficients for calculating the various midpoints
-    //a = [
-           //0             0             0             0             0             0             0
-           //1/5           0             0             0             0             0             0
-           //3/40          9/40          0             0             0             0             0
-           //44/45        -56/15         32/9          0             0             0             0
-           //19372/6561   -25360/2187    64448/6561   -212/729       0             0             0
-           //9017/3168    -355/33        46732/5247    49/176       -5103/18656    0             0
-           //35/384        0             500/1113      125/192      -2187/6784     11/84         0
-    //];
-//
-    //% Coefficients for 4th-order method
-    //b4 = a(7, :);
-    //% Coefficients for 5th-order method
-    //b5 = [ 5179/57600    0             7571/16695    393/640      -92097/339200  187/2100      1/40 ];
-    //% Coefficients for error between 4th- and 5th-order
-    //E = b4 - b5;
-    //
-    //%% Adaptation params
-    //% How large a proportion of the velocity are we allowed to be wrong by?
-    //rtol = 1e-3;
-    //% err ~ O(h^5) so we take our step size down by (err/tol)^(1/5) if we're wrong
-    //pow = 1/5;
-    //% How much are we allowed to increase step size by per non-failed step?
-    //maxLengthen = 1.1;
-    //% How much are we allowed to decrease step size by on first failure?
-    //maxFirstShorten = 10;
-    //% How much do we decrease step size by on subsequent failures?
-    //maxOtherShorten = 2;
-    //% How short is a step allowed to be
-    //dt_min = 5E-16; % seconds
- //
-    //
-    //% Preallocate output vars
-    //posOut = zeros(size(posIn));
-    //velOut = zeros(size(velIn));
-    //accelOut = zeros(size(accelIn));
-    //dtOut = dt;
-//
-    //% Assign the first set of inputs
-    //pos1 = posIn;
-    //vel1 = velIn;
-    //accel1 = accelIn;
-    //
-    //% All of our input protons are running to begin with
-    //idxrunning = true(size(pos1(:, 1)));
-    //
-    //nofailures = true;
-    //
-    //while size(pos1, 1) > 0
-    //
-        //vel2 = vel1 + dt .* ( a(2,1) * accel1 ); % v2 = v1 + h a21 kv1
-        //pos2 = pos1 + dt .* ( a(2,1) *   vel1 ); % x2 = x1 + h a21 kx1
-//
-        //accel2 = func(pos2, vel2); % kv2 = f(x2, v2)
-//
-        //vel3 = vel1 + dt .* ( a(3,1) * accel1 + a(3,2) * accel2 ); % v3 = v1 + h ( a31 kv1 + a32 kv2 )
-        //pos3 = pos1 + dt .* ( a(3,1) *   vel1 + a(3,2) *   vel2 ); % x3 = x1 + h ( a31 kx1 + a32 kx2 )
-//
-        //accel3 = func(pos3, vel3); % kv3 = f(x3, v3)
-//
-        //vel4 = vel1 + dt .* ( a(4,1) * accel1 + a(4,2) * accel2 + a(4,3) * accel3 ); % v4 = v1 + h ( a41 kv1 + a42 kv2 + a43 kv3 )
-        //pos4 = pos1 + dt .* ( a(4,1) *   vel1 + a(4,2) *   vel2 + a(4,3) *   vel3 ); % x4 = x1 + h ( a41 kx1 + a42 kx2 + a43 kx3 )
-//
-        //accel4 = func(pos4, vel4); % kv4 = f(x4, v4)
-//
-        //vel5 = vel1 + dt .* ( a(5,1) * accel1 + a(5,2) * accel2 + a(5,3) * accel3 + a(5,4) * accel4 ); % v5 = v1 + h ( a51 kv1 + a52 kv2 + a53 kv3 + a54 kv4 )
-        //pos5 = pos1 + dt .* ( a(5,1) *   vel1 + a(5,2) *   vel2 + a(5,3) *   vel3 + a(5,4) *   vel4 ); % x5 = x1 + h ( a51 kx1 + a52 kx2 + a53 kx3 + a54 kx4 )
-//
-        //accel5 = func(pos5, vel5); % kv5 = f(x5, v5)
-//
-        //vel6 = vel1 + dt .* ( a(6,1) * accel1 + a(6,2) * accel2 + a(6,3) * accel3 + a(6,4) * accel4 + a(6,5) * accel5 ); % v6 = v1 + h ( a61 kv1 + a62 kv2 + a63 kv3 + a64 kv4 + a65 kv5 )
-        //pos6 = pos1 + dt .* ( a(6,1) *   vel1 + a(6,2) *   vel2 + a(6,3) *   vel3 + a(6,4) *   vel4 + a(6,5) *   vel5 ); % x6 = x1 + h ( a61 kx1 + a62 kx2 + a63 kx3 + a64 kx4 + a65 kx5 )
-//
-        //accel6 = func(pos6, vel6); % kv6 = f(x6, v6)
-//
-        //vel7 = vel1 + dt .* ( a(7,1) * accel1 + a(7,2) * accel2 + a(7,3) * accel3 + a(7,4) * accel4 + a(7,5) * accel5 + a(7,6) * accel6 ); % v7 = v1 + h ( a71 kv1 + a72 kv2 + a73 kv3 + a74 kv4 + a75 kv5 + a76 kv6 )
-        //pos7 = pos1 + dt .* ( a(7,1) *   vel1 + a(7,2) *   vel2 + a(7,3) *   vel3 + a(7,4) *   vel4 + a(7,5) *   vel5 + a(7,6) *   vel6 ); % x7 = x1 + h ( a71 kx1 + a72 kx2 + a73 kx3 + a74 kx4 + a75 kx5 + a76 kx6 )
-//
-        //accel7 = func(pos7, vel7); % kv7 = f(x7, v7)
-//
-        //% Absolute difference in acceleration between 4th- and 5th-order.
-        //dErr = E(1) * accel1 + E(2) * accel2 + E(3) * accel3 + E(4) * accel4 + E(5) * accel5 + E(6) * accel6 + E(7) * accel7;
-        //
-        //% Proportion error in |vel| over the timestep, per proton.
-        //err = dt .* sqrt(dot(dErr, dErr, 2) ./ dot(vel1, vel1, 2));
-        //if verbose
-            //display(sprintf('        Errors: min: %.1e, max: %.1e, mean: %.1e', min(err), max(err), mean(err)));
-        //end
-//
-        //idxfail = err > rtol; % Indices of failed particles, which we'll want to run again
-        //
-        //if nofailures
-            //temp = 1.25 * (err / rtol).^pow;
-            //temp(~idxfail & temp < 1/maxLengthen) = 1/maxLengthen;
-            //temp( idxfail & temp > maxFirstShorten ) = maxFirstShorten;
-            //dt = dt./temp;
-        //else
-            //dt(idxfail) = dt(idxfail) / maxOtherShorten;
-        //end
-        //
-        //if sum(idxfail) == 0 % All our particles are fine! Yay!
-            //velOut(idxrunning, :) = vel7;
-            //posOut(idxrunning, :) = pos7;
-            //accelOut(idxrunning, :) = accel7;
-            //dtOut(idxrunning) = dt;
-            //break;
-        //end
-        //
-        //if verbose
-            //display(sprintf('            Failed for %d particles, reducing stepsize to try again', sum(idxfail)));
-        //end
-        //
-        //idxsuccess = ~idxfail;
-        //
-        //idxsuccessfull = false(size(posIn(:, 1)));
-        //
-        //idxsuccessfull(idxrunning) = idxsuccess;
-        //
-        //velOut(idxsuccessfull, :) = vel7(idxsuccess, :);
-        //posOut(idxsuccessfull, :) = pos7(idxsuccess, :);
-        //accelOut(idxsuccessfull, :) = accel7(idxsuccess, :);
-        //dtOut(idxsuccessfull) = dt(idxsuccess);
-        //
-        //vel1 = vel1(idxfail, :);
-        //pos1 = pos1(idxfail, :);
-        //accel1 = accel1(idxfail, :);
-        //dt = dt(idxfail);
-        //
-        //idxrunning(idxsuccessfull) = false;
-        //
-        //idxkill = dt < dt_min;
-        //
-        //if sum(idxkill) > 0
-            //display(sprintf('            %d particles failed to converge at miminum stepsize; killing them.', sum(idxkill)));
-//
-            //idxkillfull = false(size(posIn(:, 1)));
-            //idxkillfull(idxrunning) = idxkill;
-//
-            //vel1 = vel1(~idxkill, :);
-            //pos1 = pos1(~idxkill, :);
-            //accel1 = accel1(~idxkill, :);
-            //dt = dt(~idxkill);
-//
-            //idxrunning(idxkillfull) = false;
-            //
-            //if sum(idxrunning) <= 0
-                //break;
-            //end
-        //end
-        //
-        //nofailures = false;
-    //end
-//end
+            state1->vel[j].x = state->vel[j].x;
+            state1->vel[j].y = state->vel[j].y;
+            state1->vel[j].z = state->vel[j].z;
+
+            state1->acc[j].x = state->acc[j].x;
+            state1->acc[j].y = state->acc[j].y;
+            state1->acc[j].z = state->acc[j].z;
+        }
+    }
+    
+    // All of our input protons are running to begin with
+    bool* idxrunning = new bool[state->N];
+    
+    bool nofailures = true;
+    
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state2->pos[j].x = state1->pos[j].x + ( a2[0] * state1->vel[j].x ) * dt[j];
+            state2->pos[j].y = state1->pos[j].y + ( a2[0] * state1->vel[j].y ) * dt[j];
+            state2->pos[j].z = state1->pos[j].z + ( a2[0] * state1->vel[j].z ) * dt[j];
+
+            state2->vel[j].x = state1->vel[j].x + ( a2[0] * state1->acc[j].x ) * dt[j];
+            state2->vel[j].y = state1->vel[j].y + ( a2[0] * state1->acc[j].y ) * dt[j];
+            state2->vel[j].z = state1->vel[j].z + ( a2[0] * state1->acc[j].z ) * dt[j];
+        }
+    }
+
+    accelFunc(state2, field); // kv2 = f(x2, v2)
+
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state3->pos[j].x = state1->pos[j].x + ( a3[0] * state1->vel[j].x
+                                                  + a3[1] * state2->vel[j].x
+                                                  ) * dt[j];
+            
+            state3->pos[j].y = state1->pos[j].y + ( a3[0] * state1->vel[j].y
+                                                  + a3[1] * state2->vel[j].y
+                                                  ) * dt[j];
+            
+            state3->pos[j].z = state1->pos[j].z + ( a3[0] * state1->vel[j].z
+                                                  + a3[1] * state2->vel[j].z
+                                                  ) * dt[j];
+
+            state3->vel[j].x = state1->vel[j].x + ( a3[0] * state1->acc[j].x
+                                                  + a3[1] * state2->acc[j].x
+                                                  ) * dt[j];
+            
+            state3->vel[j].y = state1->vel[j].y + ( a3[0] * state1->acc[j].y
+                                                  + a3[1] * state2->acc[j].y
+                                                  ) * dt[j];
+            
+            state3->vel[j].z = state1->vel[j].z + ( a3[0] * state1->acc[j].z
+                                                  + a3[1] * state2->acc[j].z
+                                                  ) * dt[j];
+        }
+    }
+
+    accelFunc(state3, field); // kv3 = f(x3, v3)
+
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state4->pos[j].x = state1->pos[j].x + ( a4[0] * state1->vel[j].x
+                                                  + a4[1] * state2->vel[j].x 
+                                                  + a4[2] * state3->vel[j].x
+                                                  ) * dt[j];
+
+            state4->pos[j].y = state1->pos[j].y + ( a4[0] * state1->vel[j].y
+                                                  + a4[1] * state2->vel[j].y 
+                                                  + a4[2] * state3->vel[j].y
+                                                  ) * dt[j];
+
+            state4->pos[j].z = state1->pos[j].z + ( a4[0] * state1->vel[j].z
+                                                  + a4[1] * state2->vel[j].z 
+                                                  + a4[2] * state3->vel[j].z
+                                                  ) * dt[j];
+
+            state4->vel[j].x = state1->vel[j].x + ( a4[0] * state1->acc[j].x
+                                                  + a4[1] * state2->acc[j].x 
+                                                  + a4[2] * state3->acc[j].x
+                                                  ) * dt[j];
+
+            state4->vel[j].y = state1->vel[j].y + ( a4[0] * state1->acc[j].y
+                                                  + a4[1] * state2->acc[j].y 
+                                                  + a4[2] * state3->acc[j].y
+                                                  ) * dt[j];
+
+            state4->vel[j].z = state1->vel[j].z + ( a4[0] * state1->acc[j].z
+                                                  + a4[1] * state2->acc[j].z 
+                                                  + a4[2] * state3->acc[j].z
+                                                  ) * dt[j];
+        }
+    }
+
+    accelFunc(state4, field); // kv4 = f(x4, v4)
+
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state5->pos[j].x = state1->pos[j].x + ( a5[0] * state1->vel[j].x
+                                                  + a5[1] * state2->vel[j].x 
+                                                  + a5[2] * state3->vel[j].x
+                                                  + a5[3] * state4->vel[j].x
+                                                  ) * dt[j];
+
+            state5->pos[j].y = state1->pos[j].y + ( a5[0] * state1->vel[j].y
+                                                  + a5[1] * state2->vel[j].y 
+                                                  + a5[2] * state3->vel[j].y
+                                                  + a5[3] * state4->vel[j].y
+                                                  ) * dt[j];
+
+            state5->pos[j].z = state1->pos[j].z + ( a5[0] * state1->vel[j].z
+                                                  + a5[1] * state2->vel[j].z 
+                                                  + a5[2] * state3->vel[j].z
+                                                  + a5[3] * state4->vel[j].z
+                                                  ) * dt[j];
+
+            state5->vel[j].x = state1->vel[j].x + ( a5[0] * state1->acc[j].x
+                                                  + a5[1] * state2->acc[j].x 
+                                                  + a5[2] * state3->acc[j].x
+                                                  + a5[3] * state4->acc[j].x
+                                                  ) * dt[j];
+
+            state5->vel[j].y = state1->vel[j].y + ( a5[0] * state1->acc[j].y
+                                                  + a5[1] * state2->acc[j].y 
+                                                  + a5[2] * state3->acc[j].y
+                                                  + a5[3] * state4->acc[j].y
+                                                  ) * dt[j];
+
+            state5->vel[j].z = state1->vel[j].z + ( a5[0] * state1->acc[j].z
+                                                  + a5[1] * state2->acc[j].z 
+                                                  + a5[2] * state3->acc[j].z
+                                                  + a5[3] * state4->acc[j].z
+                                                  ) * dt[j];
+        }
+    }
+
+    accelFunc(state5, field); // kv5 = f(x5, v5)
+
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state6->pos[j].x = state1->pos[j].x + ( a6[0] * state1->vel[j].x
+                                                  + a6[1] * state2->vel[j].x 
+                                                  + a6[2] * state3->vel[j].x
+                                                  + a6[3] * state4->vel[j].x
+                                                  + a6[4] * state5->vel[j].x
+                                                  ) * dt[j];
+
+            state6->pos[j].y = state1->pos[j].y + ( a6[0] * state1->vel[j].y
+                                                  + a6[1] * state2->vel[j].y 
+                                                  + a6[2] * state3->vel[j].y
+                                                  + a6[3] * state4->vel[j].y
+                                                  + a6[4] * state5->vel[j].y
+                                                  ) * dt[j];
+
+            state6->pos[j].z = state1->pos[j].z + ( a6[0] * state1->vel[j].z
+                                                  + a6[1] * state2->vel[j].z 
+                                                  + a6[2] * state3->vel[j].z
+                                                  + a6[3] * state4->vel[j].z
+                                                  + a6[4] * state5->vel[j].z
+                                                  ) * dt[j];
+
+            state6->vel[j].x = state1->vel[j].x + ( a6[0] * state1->acc[j].x
+                                                  + a6[1] * state2->acc[j].x 
+                                                  + a6[2] * state3->acc[j].x
+                                                  + a6[3] * state4->acc[j].x
+                                                  + a6[4] * state5->acc[j].x
+                                                  ) * dt[j];
+
+            state6->vel[j].y = state1->vel[j].y + ( a6[0] * state1->acc[j].y
+                                                  + a6[1] * state2->acc[j].y 
+                                                  + a6[2] * state3->acc[j].y
+                                                  + a6[3] * state4->acc[j].y
+                                                  + a6[4] * state5->acc[j].y
+                                                  ) * dt[j];
+
+            state6->vel[j].z = state1->vel[j].z + ( a6[0] * state1->acc[j].z
+                                                  + a6[1] * state2->acc[j].z 
+                                                  + a6[2] * state3->acc[j].z
+                                                  + a6[3] * state4->acc[j].z
+                                                  + a6[4] * state5->acc[j].z
+                                                  ) * dt[j];
+        }
+    }
+
+    accelFunc(state6, field); // kv6 = f(x6, v6)
+
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state7->pos[j].x = state1->pos[j].x + ( a7[0] * state1->vel[j].x
+                                                  + a7[1] * state2->vel[j].x 
+                                                  + a7[2] * state3->vel[j].x
+                                                  + a7[3] * state4->vel[j].x
+                                                  + a7[4] * state5->vel[j].x
+                                                  + a7[5] * state6->vel[j].x
+                                                  ) * dt[j];
+
+            state7->pos[j].y = state1->pos[j].y + ( a7[0] * state1->vel[j].y
+                                                  + a7[1] * state2->vel[j].y 
+                                                  + a7[2] * state3->vel[j].y
+                                                  + a7[3] * state4->vel[j].y
+                                                  + a7[4] * state5->vel[j].y
+                                                  + a7[5] * state6->vel[j].y
+                                                  ) * dt[j];
+
+            state7->pos[j].z = state1->pos[j].z + ( a7[0] * state1->vel[j].z
+                                                  + a7[1] * state2->vel[j].z 
+                                                  + a7[2] * state3->vel[j].z
+                                                  + a7[3] * state4->vel[j].z
+                                                  + a7[4] * state5->vel[j].z
+                                                  + a7[5] * state6->vel[j].z
+                                                  ) * dt[j];
+
+            state7->vel[j].x = state1->vel[j].x + ( a7[0] * state1->acc[j].x
+                                                  + a7[1] * state2->acc[j].x 
+                                                  + a7[2] * state3->acc[j].x
+                                                  + a7[3] * state4->acc[j].x
+                                                  + a7[4] * state5->acc[j].x
+                                                  + a7[5] * state6->acc[j].x
+                                                  ) * dt[j];
+
+            state7->vel[j].y = state1->vel[j].y + ( a7[0] * state1->acc[j].y
+                                                  + a7[1] * state2->acc[j].y 
+                                                  + a7[2] * state3->acc[j].y
+                                                  + a7[3] * state4->acc[j].y
+                                                  + a7[4] * state5->acc[j].y
+                                                  + a7[5] * state6->acc[j].y
+                                                  ) * dt[j];
+
+            state7->vel[j].z = state1->vel[j].z + ( a7[0] * state1->acc[j].z
+                                                  + a7[1] * state2->acc[j].z 
+                                                  + a7[2] * state3->acc[j].z
+                                                  + a7[3] * state4->acc[j].z
+                                                  + a7[4] * state5->acc[j].z
+                                                  + a7[5] * state6->acc[j].z
+                                                  ) * dt[j];
+        }
+    }
+
+    accelFunc(state7, field); // kv7 = f(x7, v7)
+
+    double minErr = 0, maxErr = 0, sumErr = 0;
+    long numFail = 0, numStopped = 0;
+
+    #pragma omp parallel for reduction(+:numFail, numStopped, sumErr) reduction(max:maxErr) reduction(min:minErr)
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            // Absolute difference in acceleration between 4th- and 5th-order.
+            double xErr = (b4[0]-b5[0]) * state1->acc[j].x
+                        + (b4[1]-b5[1]) * state2->acc[j].x
+                        + (b4[2]-b5[2]) * state3->acc[j].x
+                        + (b4[3]-b5[3]) * state4->acc[j].x
+                        + (b4[4]-b5[4]) * state5->acc[j].x
+                        + (b4[5]-b5[5]) * state6->acc[j].x
+                        + (b4[6]-b5[6]) * state7->acc[j].x;
+
+            double yErr = (b4[0]-b5[0]) * state1->acc[j].y
+                        + (b4[1]-b5[1]) * state2->acc[j].y
+                        + (b4[2]-b5[2]) * state3->acc[j].y
+                        + (b4[3]-b5[3]) * state4->acc[j].y
+                        + (b4[4]-b5[4]) * state5->acc[j].y
+                        + (b4[5]-b5[5]) * state6->acc[j].y
+                        + (b4[6]-b5[6]) * state7->acc[j].y;
+
+            double zErr = (b4[0]-b5[0]) * state1->acc[j].z
+                        + (b4[1]-b5[1]) * state2->acc[j].z
+                        + (b4[2]-b5[2]) * state3->acc[j].z
+                        + (b4[3]-b5[3]) * state4->acc[j].z
+                        + (b4[4]-b5[4]) * state5->acc[j].z
+                        + (b4[5]-b5[5]) * state6->acc[j].z
+                        + (b4[6]-b5[6]) * state7->acc[j].z;
+
+
+            double err = dt[j] * sqrt((xErr*xErr + yErr*yErr + zErr*zErr)
+                                     /(state1->vel[j].x*state1->vel[j].x
+                                      +state1->vel[j].y*state1->vel[j].y
+                                      +state1->vel[j].z*state1->vel[j].z));
+
+            bool succ = err < rtol;
+
+            if(lastIterationSuccess[j]) {
+                double step_divisor = 1.25 * pow((err / rtol), error_scale_power);
+                if( succ && step_divisor < 1/maxLengthen) step_divisor = 1/maxLengthen;
+                if(!succ && step_divisor > maxFirstShorten ) step_divisor = maxFirstShorten;
+                dt[j] /= step_divisor;
+            }
+            else if(!succ) {
+                dt[j] /= maxOtherShorten;
+            }
+                        
+            lastIterationSuccess[j] = succ;
+
+            if(dt[j] < dt_min) {
+                state->running[j] = false;
+                numStopped++;
+            } else if(succ) {
+                state->pos[j].x = state7->pos[j].x;
+                state->pos[j].y = state7->pos[j].y;
+                state->pos[j].z = state7->pos[j].z;
+
+                state->vel[j].x = state7->vel[j].x;
+                state->vel[j].y = state7->vel[j].y;
+                state->vel[j].z = state7->vel[j].z;
+
+                state->acc[j].x = state7->acc[j].x;
+                state->acc[j].y = state7->acc[j].y;
+                state->acc[j].z = state7->acc[j].z;
+            }
+
+            minErr = fmin(minErr, err);
+            maxErr = fmax(maxErr, err);
+            sumErr += err;
+            numFail += succ ? 0 : 1;
+        }
+    }
+    state->N_running -= numStopped;
+    
+    // Proportion error in |vel| over the timestep, per proton.
+    if(verbose) {
+        printf("        Errors: min: %.1e, max: %.1e, mean: %.1e\n", minErr, maxErr, sumErr / N);
+
+        if(numFail > 0)
+            printf("            Failed for %li particles, will reduce their stepsize to try again.\n", numFail);
+        
+        if(numStopped > 0)
+            printf("            %li particles failed to converge at miminum stepsize; stopping them.\n", numStopped);
+    }
+}

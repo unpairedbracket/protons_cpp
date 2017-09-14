@@ -1,28 +1,40 @@
 ---
-particleType:
-    charge: 1E-19
-    mass: 1E-27
+relativistic: true
 
-source:
-    type: square
+particleType: proton
+
+source: #in
+    type: helix
     distance: 0.02
     divergence: 0.05
-    energy: 40e6
-    number_x: 100
-    number_y: 100
+    energy: 6.40871e-12
+    N: 10000
 
-field:
+field: #in
     type: cocoon
     length_scale: 0.001
     radial_scale: 0.0005
-    B_scale: 25
+    B_scale: 25000
 
-detector:
+detector: #not implemented
     type: file_output
     distance: 1
     
-integrator:
-    type: RK4
-    relativistic: false
-    step_size: 1.14e-12
+integrator: #in
+    type: RKDP
+    time_step: 1.14e-12
+
+middleware: #not implemented
+    -
+        type: opengl
+        vsync: false
+        window_size: [1000, 1000]
+        antialiasing: false
+        background: [0, 0, 0]
+        shader: [shaders/shader.vert, shaders/shader.frag]
+    -
+        type: logger
+        log: iteration
+    -
+        type: profiler
 ...
