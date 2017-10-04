@@ -1,5 +1,8 @@
 #include "structs.h"
 
+#include <cstring>
+#include <cstdio>
+
 void initParticle(ParticleInfo* particle) {
     if(particle->mass == 0)
     {
@@ -42,10 +45,5 @@ void shadowParticleState(ParticleState* state, ParticleState* other) {
 
     state->N = other->N;
     state->N_running = 0;
-}
-
-void initDetector(ParticleDetector* detector, ParticleInfo* particle, double distance) {
-    detector->particleInfo = particle;
-    detector->distance = distance;
 }
 

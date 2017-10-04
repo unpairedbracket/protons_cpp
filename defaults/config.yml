@@ -1,0 +1,15 @@
+---
+relativistic: true
+
+particleType: proton
+
+source: helix
+
+field: cocoon
+
+detector: none
+    
+integrator: RK4
+
+middleware: none
+...

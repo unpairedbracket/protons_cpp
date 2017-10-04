@@ -1,5 +1,7 @@
 #include "integrator.h"
 
+#include <cstdio>
+
 const double RKDPIntegrator::a2[] = {1.0/5.0};
 const double RKDPIntegrator::a3[] = {3.0/40.0, 9.0/40.0};
 const double RKDPIntegrator::a4[] = {44.0/45.0, -56.0/15.0, 32.0/9.0};

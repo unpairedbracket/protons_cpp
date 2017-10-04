@@ -1,7 +1,49 @@
 #include "config_parser.h"
 
-void load_config(const std::string& filename) {
+#include "../fields/fields_cocoon.h"
+#include "../util/physical_constants.h"
+
+void load_config(const std::string& filename, const std::string& defaults_filename) {
     config = YAML::LoadFile(filename);
+    defaults = YAML::LoadFile(defaults_filename);
+
+    if(!config["relativistic"]) config["relativistic"] = defaults["relativistic"];
+    if(!config["particleType"]) config["particleType"] = defaults["particleType"];
+    if(!config["source"]) config["source"] = defaults["source"];
+    if(!config["field"]) config["field"] = defaults["field"];
+    if(!config["integrator"]) config["integrator"] = defaults["integrator"];
+    if(!config["detector"]) config["detector"] = defaults["detector"];
+    if(!config["middleware"]) config["middleware"] = defaults["middleware"];
+
+    resolve_defaults(config);
+
+    std::cout << config << std::endl;
+}
+
+void resolve_defaults(YAML::Node node) {
+    replace_with_file(node, "source");
+    replace_with_file(node, "field");
+    replace_with_file(node, "integrator");
+    replace_with_file(node, "detector");
+}
+
+void replace_with_file(YAML::Node node, std::string prop) {
+    std::string newfile;
+    YAML::Node newnode;
+    if(node[prop].IsScalar()) {
+        newfile = "defaults/" + prop + "/" + node[prop].as<std::string>() + ".yml";
+    } else if(node[prop].IsMap()) {
+        newfile = "defaults/" + prop + "/" + node[prop]["type"].as<std::string>() + ".yml";
+    }
+    newnode = YAML::LoadFile(newfile);
+    
+    if(node[prop].IsMap()) {
+        newnode = YAML::LoadFile(newfile);
+        for(auto setting : node[prop]) {
+            newnode[setting.first.as<std::string>()] = setting.second;
+        }
+    }
+    node[prop] = newnode;
 }
 
 ParticleInfo* getParticleInfo() {
@@ -23,26 +65,26 @@ ParticleInfo* getParticleInfo() {
        //We have a named particle
         std::string name = particleNode.as<std::string>();
         if(name.compare("proton") == 0) { 
-            mass = 1.6726217E-27;
-            charge = 1.6021766208E-19;
+            mass = m_p;
+            charge = + e;
         } else if(name.compare("electron") == 0) {
-            mass = 9.10938356E-31;
-            charge = -1.6021766208E-19;
+            mass = m_e;
+            charge = - e;
         } else {
             std::cout << "Particle " << name << " not implemented. Using protons as default." << std::endl;
-            mass = 1.6726217E-27;
-            charge = 1.6021766208E-19;
+            mass = m_p;
+            charge = + e;
         }
     }
     
     if(particleNode.IsMap()) {
         if(!particleNode["mass"]) {
             std::cout << "Particle mass not specified. Using proton mass as default." << std::endl;
-            particleNode["mass"] = 1.6726217E-27;
+            particleNode["mass"] = m_p;
         }
         if(!particleNode["charge"]) {
             std::cout << "Particle charge not specified. Using elemental charge as default." << std::endl;
-            particleNode["charge"] = 1.6021766208E-19;
+            particleNode["charge"] = e;
         }
         mass = particleNode["mass"].as<double>();
         charge = particleNode["charge"].as<double>();
@@ -223,9 +265,21 @@ FieldStructure* getFieldsInfo() {
     return field;
 }
 
-ParticleDetector* getParticleDetector();
+ParticleDetector* getDetectorInfo() {
+    ParticleDetector* detector = nullptr;
+    YAML::Node detectorNode = config["detector"];
 
-Integrator* getIntegrator() {
+    std::string detectorType = detectorNode["type"].as<std::string>();
+
+    if(detectorType.compare("none") == 0) {
+        detector = new DetectorNoop();
+        detector->distance = 1;
+    }
+
+    return detector;
+}
+
+Integrator* getIntegratorInfo() {
     Integrator* integrator = nullptr;
     YAML::Node integratorNode;
     

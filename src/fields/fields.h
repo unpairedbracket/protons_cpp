@@ -1,6 +1,6 @@
 #pragma once
 
-#include "structs.h"
+#include "../particles/structs.h"
 
 struct FieldStructure {
     long N;

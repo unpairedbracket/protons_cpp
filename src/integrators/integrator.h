@@ -2,9 +2,9 @@
 
 #include <cmath>
 
-#include "structs.h"
-#include "fields.h"
-#include "accel.h"
+#include "../particles/structs.h"
+#include "../fields/fields.h"
+#include "../util/accel.h"
 
 struct Integrator {
     virtual void deinit() = 0;

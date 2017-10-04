@@ -1,5 +1,9 @@
 #include "accel.h"
 
+#include <cmath>
+
+#include "physical_constants.h"
+
 void accel(ParticleState* state, FieldStructure* fields) {
     fields->getFields(state);
     #pragma omp parallel for

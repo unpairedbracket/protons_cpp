@@ -1,9 +1,6 @@
 #pragma once
 
-#include <cassert>
-
-#include "math.h"
-#include "structs.h"
+#include "../particles/structs.h"
 
 struct ParticleSource {
     virtual ParticleState* genParticleState(ParticleInfo* particleType) = 0;

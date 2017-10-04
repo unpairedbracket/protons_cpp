@@ -1,5 +1,9 @@
 #include "source.h"
 
+#include <cassert>
+
+#include "../util/math.h"
+
 ParticleState* SquareSource::genParticleState(ParticleInfo* particleType) {
     ParticleState* state = new ParticleState();
     initParticleState(state, particleType, this->x_extent * this->y_extent);

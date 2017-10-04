@@ -9,11 +9,12 @@
 
 #include <omp.h>
 
-#include "math.h"
-#include "structs.h"
-#include "integrator.h"
-#include "fields_cocoon.h"
-#include "config_parser.h"
+#include "util/math.h"
+#include "particles/structs.h"
+#include "detectors/detector.h"
+#include "integrators/integrator.h"
+#include "fields/fields_cocoon.h"
+#include "config/config_parser.h"
 
 #include "graphics/window.h"
 

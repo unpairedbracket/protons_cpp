@@ -1,10 +1,9 @@
 #include "main.h"
 
-int main(int argc, char *argv[]) {
-    const double mass = 1.6726217E-27;
-    const double charge = 1.6021766208E-19;
+#include "util/physical_constants.h"
 
-    load_config("configs/config.yml");
+int main(int argc, char *argv[]) {
+    load_config("configs/config.yml", "defaults/config.yml");
     ParticleInfo* particleType = getParticleInfo();
 
     //Source
@@ -18,9 +17,8 @@ int main(int argc, char *argv[]) {
     initFieldArrays(field, state->N);
 
     //Detector
-    double detectorDistance = 1; //Distance from back object plane to image plane
-    ParticleDetector detector;
-    initDetector(&detector, particleType, detectorDistance);
+    ParticleDetector* detector = getDetectorInfo();
+    printf("Distance: %f", detector->distance);
 
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
@@ -37,7 +35,7 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point begin;
     std::chrono::steady_clock::time_point end;
 
-    Integrator* integrator = getIntegrator();
+    Integrator* integrator = getIntegratorInfo();
     integrator->initFromState(state);
 
     double sumTimes = 0;
@@ -46,10 +44,11 @@ int main(int argc, char *argv[]) {
     if(USE_GL) {
         openWindow("shaders/shader.vert", "shaders/shader.frag");
         //setupMatrix(source->distance, detector.distance * 1.01, source.divergence);
-        setupMatrix(0.02, detector.distance * 1.01, 0.05);
+        setupMatrix(0.02, detector->distance * 1.01, 0.05);
         setupBuffers(&state->pos[0].x, state->running, state->N);
         updateBuffers(&state->pos[0].x, state->running, state->N);
         draw(state->N);
+        printf("Window opened");
     }
 
     long i;
@@ -73,13 +72,8 @@ int main(int argc, char *argv[]) {
     }
     printf("%li iterations taken \n", i);
     
-    #pragma omp parallel for
-    for(long j = 0; j < state->N; j++) {
-        state->pos[j].x += (detector.distance - state->pos[j].z) * state->vel[j].x / state->vel[j].z;
-        state->pos[j].y += (detector.distance - state->pos[j].z) * state->vel[j].y / state->vel[j].z;
-        state->pos[j].z += (detector.distance - state->pos[j].z);
-    }
-    
+    detector->finalPush(state);
+
     if(USE_GL) {
         updateBuffers(&state->pos[0].x, state->running, state->N);
         draw(state->N, true);
@@ -102,7 +96,7 @@ void invalidateStates(ParticleState* particles) {
         {
             if(particles->pos[j].z > 10 * 0.001 * 100
             || particles->pos[j].x*particles->pos[j].x + particles->pos[j].y*particles->pos[j].y > 0.002*0.002
-            || particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > 3E8*3E8
+            || particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > c*c
             ) {
                 particles->running[j] = false;
                 #pragma omp atomic
