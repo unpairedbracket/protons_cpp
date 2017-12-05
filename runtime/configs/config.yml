@@ -1,0 +1,35 @@
+---
+particleType: proton
+
+source: #in
+    type: helix
+    distance: 0.02
+    divergence: 0.05
+    energy: 6.40871e-12
+    N: 10000
+
+field: #in
+    type: flash
+
+detector:
+    type: hdf5
+    distance: 1
+    
+integrator: #in
+    type: RKDP
+    time_step: 1.14e-12
+
+middleware: #not implemented
+    -
+        type: opengl
+        vsync: false
+        window_size: [1000, 1000]
+        antialiasing: false
+        background: [0, 0, 0]
+        shader: [shaders/shader.vert, shaders/shader.frag]
+    -
+        type: logger
+        log: iteration
+    -
+        type: profiler
+...

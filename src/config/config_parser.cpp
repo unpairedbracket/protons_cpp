@@ -274,6 +274,12 @@ ParticleDetector* getDetectorInfo() {
     if(detectorType.compare("none") == 0) {
         detector = new DetectorNoop();
         detector->distance = 1;
+    } else if(detectorType.compare("text") == 0) {
+        detector = new DetectorTextFile();
+        detector->distance = detectorNode["distance"].as<double>();
+    } else if(detectorType.compare("hdf5") == 0) {
+        detector = new DetectorHDF5();
+        detector->distance = detectorNode["distance"].as<double>();
     }
 
     return detector;

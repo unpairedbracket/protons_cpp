@@ -25,7 +25,6 @@ void initPos(ParticleSource* sourceInfo, ParticleState* particles);
 void initVel(ParticleSource* sourceInfo, ParticleState* particles);
 
 void print_status(ParticleState* state);
-void print_status_raw(ParticleState* state);
 
 int main(int argc, char *argv[]);
 

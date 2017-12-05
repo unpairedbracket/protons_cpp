@@ -14,3 +14,11 @@ struct ParticleDetector {
 struct DetectorNoop : ParticleDetector {
     void output(ParticleState* state) override {};
 };
+
+struct DetectorTextFile : ParticleDetector {
+    void output(ParticleState* state) override;
+};
+
+struct DetectorHDF5 : ParticleDetector {
+    void output(ParticleState* state) override;
+};

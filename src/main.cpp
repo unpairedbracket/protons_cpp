@@ -10,15 +10,14 @@ int main(int argc, char *argv[]) {
     ParticleSource* source = getSourceInfo();
 
     ParticleState* state = source->genParticleState(particleType);
-    print_status(state);
 
     //Object
     FieldStructure* field = getFieldsInfo();
     initFieldArrays(field, state->N);
+    field->initFields();
 
     //Detector
     ParticleDetector* detector = getDetectorInfo();
-    printf("Distance: %f", detector->distance);
 
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
@@ -27,9 +26,6 @@ int main(int argc, char *argv[]) {
         state->pos[j].z -= state->pos[j].z;
     }
 
-    print_status(state);
-
-    printf("\n");
     const long steps = 10000;
 
     std::chrono::steady_clock::time_point begin;
@@ -82,8 +78,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Average time taken: " << sumTimes / (1000.0 * i) << " us (" << sumTimes / (1000.0 * i * state->N) << " us per particle)" << std::endl;
     std::cout << "Standard Deviation: " << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / 1000.0 << " us (" << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / (1000.0 * state->N) << " us per particle)" << std::endl;
 
-    print_status(state);
-    print_status_raw(state);
+    detector->output(state);
 
     integrator->deinit();
     return 0;
@@ -105,26 +100,3 @@ void invalidateStates(ParticleState* particles) {
         }
     }
 }
-
-void print_status(ParticleState* state) {
-    for(long i = 0; i < 3; i++) {//state->N; i++) {
-        printf("pos = [%f, %f, %f]; vel = [%f, %f, %f]\n", state->pos[i].x, state->pos[i].y, state->pos[i].z, state->vel[i].x, state->vel[i].y, state->vel[i].z);
-    }
-}
-
-void print_status_raw(ParticleState* state) {
-    std::ofstream posfile;
-    posfile.open("pos.txt");
-    for(long i = 0; i < state->N; i++) {
-        posfile << state->pos[i].x << "," << state->pos[i].y << "," << state->pos[i].z << std::endl;
-    }
-    posfile.close();
-    
-    std::ofstream velfile;
-    velfile.open("vel.txt");
-    for(long i = 0; i < state->N; i++) {
-        velfile << state->vel[i].x << "," << state->vel[i].y << "," << state->vel[i].z << std::endl;
-    }
-    velfile.close();
-}
-
