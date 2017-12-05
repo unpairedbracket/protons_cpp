@@ -13,6 +13,14 @@ struct FlashField : FieldStructure {
     float* magy;
     float* magz;
 
+    int* blockIn;
+    int* cellIn;
+
+    int nb[3];
+    int nblocks;
+    Vector3* bounds_min;
+    Vector3* bounds_max;
+
     void initFields() override;
     void getFields(ParticleState* state) override;
 };
