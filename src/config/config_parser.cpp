@@ -36,7 +36,7 @@ void replace_with_file(YAML::Node node, std::string prop) {
         newfile = "defaults/" + prop + "/" + node[prop]["type"].as<std::string>() + ".yml";
     }
     newnode = YAML::LoadFile(newfile);
-    
+
     if(node[prop].IsMap()) {
         newnode = YAML::LoadFile(newfile);
         for(auto setting : node[prop]) {
@@ -64,7 +64,7 @@ ParticleInfo* getParticleInfo() {
     if(particleNode.IsScalar()) {
        //We have a named particle
         std::string name = particleNode.as<std::string>();
-        if(name.compare("proton") == 0) { 
+        if(name.compare("proton") == 0) {
             mass = m_p;
             charge = + e;
         } else if(name.compare("electron") == 0) {
@@ -76,7 +76,7 @@ ParticleInfo* getParticleInfo() {
             charge = + e;
         }
     }
-    
+
     if(particleNode.IsMap()) {
         if(!particleNode["mass"]) {
             std::cout << "Particle mass not specified. Using proton mass as default." << std::endl;
@@ -96,10 +96,10 @@ ParticleInfo* getParticleInfo() {
 }
 
 ParticleSource* getSourceInfo() {
-    
+
     ParticleSource* source = nullptr;
     YAML::Node sourceNode;
-    
+
     if(!config["source"]) {
         std::cout << "No source type specified. Defaulting to helix." << std::endl;
         config["source"] = "helix";
@@ -156,7 +156,7 @@ ParticleSource* getSourceInfo() {
 
             SquareSource* squareSource = new SquareSource();
             source = squareSource;
- 
+
             squareSource->x_extent = sourceNode["N"][0].as<long>();
             squareSource->y_extent = sourceNode["N"][1].as<long>();
             squareSource->distance = sourceNode["distance"].as<double>();
@@ -192,7 +192,7 @@ ParticleSource* getSourceInfo() {
 
             HelixSource* helixSource = new HelixSource();
             source = helixSource;
- 
+
             helixSource->N = sourceNode["N"].as<long>();
             helixSource->distance = sourceNode["distance"].as<double>();
             helixSource->divergence = sourceNode["divergence"].as<double>();
@@ -207,7 +207,7 @@ ParticleSource* getSourceInfo() {
 FieldStructure* getFieldsInfo() {
     FieldStructure* field = nullptr;
     YAML::Node fieldNode;
-    
+
     if(!config["field"]) {
         std::cout << "No field type specified. Defaulting to cocoon." << std::endl;
         config["field"] = "cocoon";
@@ -255,7 +255,7 @@ FieldStructure* getFieldsInfo() {
 
             CocoonField* cocoonField = new CocoonField();
             field = cocoonField;
- 
+
             cocoonField->r_scale = fieldNode["radial_scale"].as<double>();
             cocoonField->z_scale = fieldNode["length_scale"].as<double>();
             cocoonField->B_strength = fieldNode["B_scale"].as<double>();
@@ -288,7 +288,7 @@ ParticleDetector* getDetectorInfo() {
 Integrator* getIntegratorInfo() {
     Integrator* integrator = nullptr;
     YAML::Node integratorNode;
-    
+
     if(!config["integrator"]) {
         std::cout << "No integrator specified. Defaulting to RK4." << std::endl;
         config["integrator"] = "RK4";
@@ -330,7 +330,7 @@ Integrator* getIntegratorInfo() {
         }
 
         if(!integratorNode["relativistic"]) {
-            if(config["relativistic"]) { 
+            if(config["relativistic"]) {
                 std::cout << "Integrator inheriting relativistic preference from global setting." << std::endl;
                 integratorNode["relativistic"] = config["relativistic"];
             } else {
@@ -349,6 +349,6 @@ Integrator* getIntegratorInfo() {
     }
 
     return integrator;
-    
+
 }
 
