@@ -1,6 +1,7 @@
 #include "config_parser.h"
 
 #include "../fields/fields_cocoon.h"
+#include "../fields/fields_flash.h"
 #include "../util/physical_constants.h"
 
 void load_config(const std::string& filename, const std::string& defaults_filename) {
@@ -231,7 +232,7 @@ FieldStructure* getFieldsInfo() {
         std::string fieldType = fieldNode["type"].as<std::string>();
 
         if(!(fieldType.compare("cocoon") == 0
-          || fieldType.compare("otherthing") == 0
+          || fieldType.compare("flash") == 0
           )) {
             std::cout << "Unsupported field type '" << fieldType << "'. Defaulting to cocoon." << std::endl;
             fieldType = std::string("cocoon");
@@ -259,6 +260,18 @@ FieldStructure* getFieldsInfo() {
             cocoonField->r_scale = fieldNode["radial_scale"].as<double>();
             cocoonField->z_scale = fieldNode["length_scale"].as<double>();
             cocoonField->B_strength = fieldNode["B_scale"].as<double>();
+        }
+
+        if(fieldType.compare("flash") == 0) {
+            if(!fieldNode["filename"]) {
+                std::cout << "No filename specified. Defaulting to fields.h5" << std::endl;
+                fieldNode["filename"] = "fields.h5";
+            }
+
+            FlashField* flashField = new FlashField();
+            field = flashField;
+
+            flashField->filename = fieldNode["filename"].as<std::string>();
         }
     }
 
