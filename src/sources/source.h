@@ -3,12 +3,13 @@
 #include "../particles/structs.h"
 
 struct ParticleSource {
+    double distance;
+    double divergence;
+
     virtual ParticleState* genParticleState(ParticleInfo* particleType) = 0;
 };
 
 struct SquareSource : ParticleSource {
-    double distance;
-    double divergence;
     double energy;
 
     long x_extent, y_extent;
@@ -17,8 +18,6 @@ struct SquareSource : ParticleSource {
 };
 
 struct HelixSource : ParticleSource {
-    double distance;
-    double divergence;
     double energy;
     double dphi;
 

@@ -1,6 +1,23 @@
 #include "main.h"
 
+#include <cstdio>
+#include <cassert>
+
+#include <chrono>
+#include <fstream>
+#include <iostream>
+
+#include <omp.h>
+
+#include "util/math.h"
 #include "util/physical_constants.h"
+#include "detectors/detector.h"
+#include "integrators/integrator.h"
+#include "config/config_parser.h"
+
+#ifdef USE_GL
+#include "graphics/window.h"
+#endif
 
 int main(int argc, char *argv[]) {
     load_config("configs/config.yml", "defaults/config.yml");
@@ -37,15 +54,14 @@ int main(int argc, char *argv[]) {
     double sumTimes = 0;
     double sumSqTimes = 0;
 
-    if(USE_GL) {
+    #ifdef USE_GL
         openWindow("shaders/shader.vert", "shaders/shader.frag");
-        //setupMatrix(source->distance, detector.distance * 1.01, source.divergence);
-        setupMatrix(0.02, detector->distance * 1.01, 0.05);
+        setupMatrix(source->distance, detector->distance * 1.01, source->divergence);
         setupBuffers(&state->pos[0].x, state->running, state->N);
         updateBuffers(&state->pos[0].x, state->running, state->N);
         draw(state->N);
-        printf("Window opened");
-    }
+        printf("Window opened\n");
+    #endif
 
     long i;
 
@@ -55,10 +71,10 @@ int main(int argc, char *argv[]) {
         integrator->step(state, field);
         invalidateStates(state);
 
-        if(USE_GL) {
+        #ifdef USE_GL
             updateBuffers(&state->pos[0].x, state->running, state->N);
             draw(state->N);
-        }
+        #endif
 
         end = std::chrono::steady_clock::now();
         double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
@@ -70,10 +86,10 @@ int main(int argc, char *argv[]) {
     
     detector->finalPush(state);
 
-    if(USE_GL) {
+    #ifdef USE_GL
         updateBuffers(&state->pos[0].x, state->running, state->N);
         draw(state->N, true);
-    }
+    #endif
     
     std::cout << "Average time taken: " << sumTimes / (1000.0 * i) << " us (" << sumTimes / (1000.0 * i * state->N) << " us per particle)" << std::endl;
     std::cout << "Standard Deviation: " << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / 1000.0 << " us (" << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / (1000.0 * state->N) << " us per particle)" << std::endl;

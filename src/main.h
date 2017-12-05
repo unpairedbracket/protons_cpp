@@ -1,24 +1,8 @@
 #pragma once
 
-#include <cstdio>
-#include <cassert>
-
-#include <chrono>
-#include <fstream>
-#include <iostream>
-
-#include <omp.h>
-
-#include "util/math.h"
 #include "particles/structs.h"
-#include "detectors/detector.h"
-#include "integrators/integrator.h"
-#include "fields/fields_cocoon.h"
-#include "config/config_parser.h"
-
-#include "graphics/window.h"
-
-const bool USE_GL = true;
+#include "fields/fields.h"
+#include "sources/source.h"
 
 void initPos(ParticleSource* sourceInfo, ParticleState* particles);
 
