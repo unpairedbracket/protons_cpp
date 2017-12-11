@@ -5,7 +5,7 @@ CC          =clang++
 CFLAGS      = -O3 -std=c++14 -fopenmp=libomp
 GL_FLAG     = -DUSE_GL=true
 LIB         = -ldl -lsz -lz -lm -lyaml-cpp
-GL_LIB      = -lGL -lX11 -lGLU -lGLEW -lglfw
+GL_LIB      = -lGL -lX11 -lGLU -lGLEW -lglfw -lpng
 
 INCLUDE     = -I$(HDF_INSTALL)/include
 LIBSHDF     = $(EXTLIB) $(HDF_INSTALL)/lib/libhdf5_hl_cpp.a $(HDF_INSTALL)/lib/libhdf5_cpp.a $(HDF_INSTALL)/lib/libhdf5_hl.a $(HDF_INSTALL)/lib/libhdf5.a
