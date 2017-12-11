@@ -279,6 +279,13 @@ FieldStructure* getFieldsInfo() {
             flashField->filename = fieldNode["filename"].as<std::string>();
             flashField->origin = {fieldNode["origin"][0].as<double>(), fieldNode["origin"][1].as<double>(), fieldNode["origin"][2].as<double>()};
         }
+
+        if(!fieldNode["axis"].IsSequence() || fieldNode["axis"].size() != 3) {
+            std::cout << "Field principal axis must be a 3d vector. Defaulting to [0, 0, 1]." << std::endl;
+            fieldNode["axis"] = YAML::Load("[0, 0, 1]");
+        }
+
+        field->zaxis = {fieldNode["axis"][0].as<double>(), fieldNode["axis"][1].as<double>(), fieldNode["axis"][2].as<double>()};
     }
 
     return field;

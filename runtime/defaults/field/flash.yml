@@ -2,4 +2,5 @@
 type: flash
 filename: fields.h5
 origin: [0, 0, 0]
+axis: [0, 0, 1]
 ...

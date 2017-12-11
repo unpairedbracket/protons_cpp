@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
     //Object
     FieldStructure* field = getFieldsInfo();
-    initFieldArrays(field, state->N);
+    field->initFieldArrays(state->N);
     field->initFields();
 
     //Detector
@@ -65,16 +65,20 @@ int main(int argc, char *argv[]) {
 
     long i;
 
+    field->orientBeam(state);
+
     for(i = 0; i < steps && state->N_running > 0; i++) {
         begin = std::chrono::steady_clock::now();
 
         integrator->step(state, field);
+        field->deorientBeam(state);
         invalidateStates(state);
 
         #ifdef USE_GL
             updateBuffers(&state->pos[0].x, state->running, state->N);
             draw(state->N);
         #endif
+        field->orientBeam(state);
 
         end = std::chrono::steady_clock::now();
         double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
@@ -83,6 +87,8 @@ int main(int argc, char *argv[]) {
         printf("Iteration %li finished, %li particles still running, took %f us\n", i, state->N_running, nanoTaken/1000.0);
     }
     printf("%li iterations taken \n", i);
+
+    field->deorientBeam(state);
     
     detector->finalPush(state);
 
