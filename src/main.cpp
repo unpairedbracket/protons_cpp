@@ -38,12 +38,12 @@ int main(int argc, char *argv[]) {
 
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
-        state->pos[j].x -= state->pos[j].z * state->vel[j].x / state->vel[j].z; 
-        state->pos[j].y -= state->pos[j].z * state->vel[j].y / state->vel[j].z;
-        state->pos[j].z -= state->pos[j].z;
+        state->pos[j].x -= (state->pos[j].z + 0.0005) * state->vel[j].x / state->vel[j].z; 
+        state->pos[j].y -= (state->pos[j].z + 0.0005) * state->vel[j].y / state->vel[j].z;
+        state->pos[j].z -= (state->pos[j].z + 0.0005);
     }
 
-    const long steps = 10000;
+    const long steps = 1500;
 
     std::chrono::steady_clock::time_point begin;
     std::chrono::steady_clock::time_point end;
@@ -112,9 +112,9 @@ void invalidateStates(ParticleState* particles) {
     for(long j = 0; j < particles->N; j++) {
         if(particles->running[j])
         {
-            if(particles->pos[j].z > 10 * 0.001 * 100
-            || particles->pos[j].x*particles->pos[j].x + particles->pos[j].y*particles->pos[j].y > 0.002*0.002
-            || particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > c*c
+            if(particles->pos[j].z > 0.0005
+            || particles->pos[j].x*particles->pos[j].x + particles->pos[j].y*particles->pos[j].y > 2 * 0.0005*0.0005
+            || particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > c*c 
             ) {
                 particles->running[j] = false;
                 #pragma omp atomic
