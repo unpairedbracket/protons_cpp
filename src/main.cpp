@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
         setupMatrix(source->distance, detector->distance * 1.01, source->divergence);
         setupBuffers(&state->pos[0].x, state->running, state->N);
         updateBuffers(&state->pos[0].x, state->running, state->N);
-        draw(state->N);
+        draw(state->N, 0, nullptr);
         printf("Window opened\n");
     #endif
 
@@ -93,8 +93,9 @@ int main(int argc, char *argv[]) {
     detector->finalPush(state);
 
     #ifdef USE_GL
+        char name[11] = "output.png";
         updateBuffers(&state->pos[0].x, state->running, state->N);
-        draw(state->N, true);
+        draw(state->N, 10, name, true);
     #endif
     
     std::cout << "Average time taken: " << sumTimes / (1000.0 * i) << " us (" << sumTimes / (1000.0 * i * state->N) << " us per particle)" << std::endl;

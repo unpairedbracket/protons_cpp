@@ -1,5 +1,7 @@
 #include "window.h"
 
+#include <png.h>
+
 int openWindow(const char * vertex_file_path,const char * fragment_file_path) {
     // Initialise GLFW
     if( !glfwInit() )
@@ -41,14 +43,7 @@ int openWindow(const char * vertex_file_path,const char * fragment_file_path) {
 }
 
 int setupMatrix(double sourceDistance, double detectorDistance, double openingAngle) {
-	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.0 unit <-> 1 unit
-    std::cout << "Angle: " << openingAngle << std::endl;
 	Projection = glm::perspective(2 * openingAngle, 1.0, sourceDistance, sourceDistance + detectorDistance);
-
-	std::cout << Projection[0][0] << "," << Projection[1][0] << "," << Projection[2][0] << "," << Projection[3][0] << std::endl;
-	std::cout << Projection[0][1] << "," << Projection[1][1] << "," << Projection[2][1] << "," << Projection[3][1] << std::endl;
-	std::cout << Projection[0][2] << "," << Projection[1][2] << "," << Projection[2][2] << "," << Projection[3][2] << std::endl;
-	std::cout << Projection[0][3] << "," << Projection[1][3] << "," << Projection[2][3] << "," << Projection[3][3] << std::endl;
 
 	// Camera matrix
 	View = glm::lookAt(
@@ -62,10 +57,10 @@ int setupMatrix(double sourceDistance, double detectorDistance, double openingAn
 	// Our ModelViewProjection : multiplication of our 3 matrices
 	mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
 	
-	std::cout << mvp[0][0] << "," << mvp[1][0] << "," << mvp[2][0] << "," << mvp[3][0] << std::endl;
-	std::cout << mvp[0][1] << "," << mvp[1][1] << "," << mvp[2][1] << "," << mvp[3][1] << std::endl;
-	std::cout << mvp[0][2] << "," << mvp[1][2] << "," << mvp[2][2] << "," << mvp[3][2] << std::endl;
-	std::cout << mvp[0][3] << "," << mvp[1][3] << "," << mvp[2][3] << "," << mvp[3][3] << std::endl;
+    // Model matrix : an identity matrix (model will be at the origin)
+    Model = glm::mat4(1.0f);
+    // Our ModelViewProjection : multiplication of our 3 matrices
+    mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
 	return 0;
 }
@@ -96,7 +91,51 @@ int updateBuffers(double pos[], bool running[], long N) {
 	return 0;
 }
     
-int draw(int N, bool wait) {
+bool save_png_libpng(const char *filename, uint8_t *pixels, int w, int h) {
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    if (!png)
+        return false;
+
+    png_infop info = png_create_info_struct(png);
+    if (!info) {
+        png_destroy_write_struct(&png, &info);
+        return false;
+    }
+
+    FILE *fp = fopen(filename, "wb");
+    if (!fp) {
+        png_destroy_write_struct(&png, &info);
+        return false;
+    }
+
+    png_init_io(png, fp);
+    png_set_IHDR(png, info, w, h, 8 /* depth */, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+        PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+    png_colorp palette = (png_colorp)png_malloc(png, PNG_MAX_PALETTE_LENGTH * sizeof(png_color));
+    if (!palette) {
+        fclose(fp);
+        png_destroy_write_struct(&png, &info);
+        return false;
+    }
+    png_set_PLTE(png, info, palette, PNG_MAX_PALETTE_LENGTH);
+    png_write_info(png, info);
+    png_set_packing(png);
+
+    png_bytepp rows = (png_bytepp)png_malloc(png, h * sizeof(png_bytep));
+    for (int i = 0; i < h; ++i)
+        rows[i] = (png_bytep)(pixels + (h - i) * w * 3);
+
+    png_write_image(png, rows);
+    png_write_end(png, info);
+    png_free(png, palette);
+    png_destroy_write_struct(&png, &info);
+
+    fclose(fp);
+    delete[] rows;
+    return true;
+}
+
+int draw(int N, int name_length, char* name, bool wait) {
     do {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -136,6 +175,22 @@ int draw(int N, bool wait) {
     }   while( wait && glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
                glfwWindowShouldClose(window) == 0 );
     
+    if ( name_length > 0 ) {
+        int w = 1000;
+        int h = 1000;
+        uint8_t *pixels = new uint8_t[w * h * 3];
+        // copy pixels from screen
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        glReadBuffer(GL_FRONT);
+        glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid *)pixels);
+
+        // save the image
+        int err = save_png_libpng(name, pixels, w, h);
+        if (err)
+           printf("Done\n");
+        else
+           printf("Failed\n");
+    }
     return 0;
 }
 
