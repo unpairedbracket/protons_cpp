@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
         #ifdef USE_GL
             updateBuffers(&state->pos[0].x, state->running, state->N);
-            draw(state->N);
+            draw(state->N, 0, nullptr);
         #endif
         field->orientBeam(state);
 
