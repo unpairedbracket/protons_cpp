@@ -239,21 +239,6 @@ FieldStructure* getFieldsInfo() {
         }
 
         if(fieldType.compare("cocoon") == 0) {
-            if(!fieldNode["radial_scale"]) {
-                std::cout << "No radial scale specified for cocoon. Defaulting to 0.001" << std::endl;
-                fieldNode["radial_scale"] = 0.001;
-            }
-
-            if(!fieldNode["length_scale"]) {
-                std::cout << "No length scale specified for cocoon. Defaulting to 0.0005" << std::endl;
-                fieldNode["length_scale"] = 0.0005;
-            }
-
-            if(!fieldNode["B_scale"]) {
-                std::cout << "No magentic field strength scale specified for cocoon. Defaulting to 1 Tesla" << std::endl;
-                fieldNode["B_scale"] = 1;
-            }
-
             CocoonField* cocoonField = new CocoonField();
             field = cocoonField;
 
@@ -263,11 +248,6 @@ FieldStructure* getFieldsInfo() {
         }
 
         if(fieldType.compare("flash") == 0) {
-            if(!fieldNode["filename"]) {
-                std::cout << "No filename specified. Defaulting to fields.h5" << std::endl;
-                fieldNode["filename"] = "fields.h5";
-            }
-
             FlashField* flashField = new FlashField();
             field = flashField;
 
