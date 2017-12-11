@@ -8,7 +8,6 @@
 struct FlashField : FieldStructure {
     std::string filename;
 
-    float* bounds;
     float* magx;
     float* magy;
     float* magz;
@@ -22,5 +21,6 @@ struct FlashField : FieldStructure {
     Vector3* bounds_max;
 
     void initFields() override;
+    bool findBlock(Vector3 position, int &block);
     void getFields(ParticleState* state) override;
 };
