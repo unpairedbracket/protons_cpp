@@ -39,8 +39,8 @@ void FlashField::initFields() {
 
         printf("Bounding Boxes for FLASH Blocks:\n");
         for(int i = 0; i < nblocks; i++) {
-            bounds_min[i] = {0.01*(bounds[index(i,0,0)]), 0.01*(bounds[index(i,1,0)]-0.05), 0.01*(bounds[index(i,2,0)]+0.05)};
-            bounds_max[i] = {0.01*(bounds[index(i,0,1)]), 0.01*(bounds[index(i,1,1)]-0.05), 0.01*(bounds[index(i,2,1)]+0.05)};
+            bounds_min[i] = {0.01*(bounds[index(i,0,0)]-this->origin.x), 0.01*(bounds[index(i,1,0)]-this->origin.y), 0.01*(bounds[index(i,2,0)]-this->origin.z)};
+            bounds_max[i] = {0.01*(bounds[index(i,0,1)]-this->origin.x), 0.01*(bounds[index(i,1,1)]-this->origin.y), 0.01*(bounds[index(i,2,1)]-this->origin.z)};
 
             printf("[%f, %f, %f] -> [%f, %f, %f]\n", bounds_min[i].x, bounds_min[i].y, bounds_min[i].z,
                                                      bounds_max[i].x, bounds_max[i].y, bounds_max[i].z);

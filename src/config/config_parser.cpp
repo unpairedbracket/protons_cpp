@@ -271,7 +271,13 @@ FieldStructure* getFieldsInfo() {
             FlashField* flashField = new FlashField();
             field = flashField;
 
+            if(!fieldNode["origin"].IsSequence() || fieldNode["origin"].size() != 3) {
+                std::cout << "FLASH Field origin must be a 3d vector. Defaulting to [0, 0, 0]." << std::endl;
+                fieldNode["origin"] = YAML::Load("[0, 0, 0]");
+            }
+
             flashField->filename = fieldNode["filename"].as<std::string>();
+            flashField->origin = {fieldNode["origin"][0].as<double>(), fieldNode["origin"][1].as<double>(), fieldNode["origin"][2].as<double>()};
         }
     }
 

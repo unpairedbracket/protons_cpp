@@ -19,6 +19,7 @@ struct FlashField : FieldStructure {
     int nblocks;
     Vector3* bounds_min;
     Vector3* bounds_max;
+    Vector3 origin;
 
     void initFields() override;
     bool findBlock(Vector3 position, int &block);
