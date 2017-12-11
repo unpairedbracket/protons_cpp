@@ -63,7 +63,7 @@ struct RKDPIntegrator : Integrator {
     // How much do we decrease step size by on subsequent failures?
     double maxOtherShorten = 2;
     // How short is a step allowed to be
-    double dt_min = 5E-16; // seconds
+    double dt_min = 5E-18; // seconds
     // Do we want to be loud about what's happening
     bool verbose = false;
 
