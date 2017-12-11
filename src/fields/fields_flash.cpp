@@ -5,9 +5,7 @@
 
 void FlashField::initFields() {
     using namespace H5;
-    try {
-        Exception::dontPrint();
-
+    {
         H5File file(this->filename, H5F_ACC_RDONLY);
 
         DataSet bounding_boxes = file.openDataSet( "/bounding box" );
@@ -26,7 +24,6 @@ void FlashField::initFields() {
         this->nblocks = dims_out[0];
 
         float* bounds = new float[nblocks*3*2];
-        auto index = [](int block, int dir, int minmax) {return 6*block + 2 * dir + minmax;};
 
         /*
          * Read data from hyperslab in the file into the hyperslab in
@@ -36,6 +33,8 @@ void FlashField::initFields() {
 
         this->bounds_min = new Vector3[nblocks];
         this->bounds_max = new Vector3[nblocks];
+
+        auto index = [](int block, int dir, int minmax) {return 6*block + 2 * dir + minmax;};
 
         printf("Bounding Boxes for FLASH Blocks:\n");
         for(int i = 0; i < nblocks; i++) {
@@ -64,11 +63,7 @@ void FlashField::initFields() {
         hsize_t mag_dims[4];
         dataspace.getSimpleExtentDims( mag_dims, NULL);
         assert(nblocks == mag_dims[0]);
-        int nxb = mag_dims[1], nyb = mag_dims[2], nzb = mag_dims[3];
-
-        this->magx = new float[nblocks*nxb*nyb*nzb];
-        this->magy = new float[nblocks*nxb*nyb*nzb];
-        this->magz = new float[nblocks*nxb*nyb*nzb];
+        int nxb = mag_dims[3], nyb = mag_dims[2], nzb = mag_dims[1];
 
         this->nb[0] = nxb;
         this->nb[1] = nyb;
@@ -80,22 +75,21 @@ void FlashField::initFields() {
          * Read data from the file into
          * memory and display the data.
          */
+        this->magx = new float[nblocks*nxb*nyb*nzb];
         magx.read( this->magx, PredType::NATIVE_FLOAT);
         magx.close();
 
         DataSet magy = file.openDataSet( "/magy" );
+        this->magy = new float[nblocks*nxb*nyb*nzb];
         magy.read( this->magy, PredType::NATIVE_FLOAT);
         magy.close();
 
         DataSet magz = file.openDataSet( "/magz" );
+        this->magz = new float[nblocks*nxb*nyb*nzb];
         magz.read( this->magz, PredType::NATIVE_FLOAT);
         magz.close();
 
         file.close();
-    } catch(FileIException error) {
-        error.printError();
-    } catch(DataSetIException error) {
-        error.printError();
     }
 
     blockIn = new int[this->N];
@@ -304,6 +298,5 @@ void FlashField::getFields(ParticleState* state) {
             }
         }
     }
-
 }
 
