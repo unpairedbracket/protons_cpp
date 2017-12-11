@@ -28,4 +28,4 @@ int setupMatrix(double sourceDistance, double detectorDistance, double openingAn
 int setupBuffers(double pos[], bool running[], long N);
 int updateBuffers(double pos[], bool running[], long N);
 
-int draw(int N, bool wait = false);
+int draw(int N, int name_length, char* name, bool wait = false);
