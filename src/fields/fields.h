@@ -9,6 +9,7 @@ struct FieldStructure {
 
     Vector3 xaxis, yaxis, zaxis;
     double theta, phi;
+    double min_z;
 
     virtual void initFields() = 0;
     virtual void getFields(ParticleState* state) = 0;

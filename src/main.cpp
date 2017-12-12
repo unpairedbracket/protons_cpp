@@ -38,9 +38,10 @@ int main(int argc, char *argv[]) {
 
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
-        state->pos[j].x -= (state->pos[j].z + 0.0005) * state->vel[j].x / state->vel[j].z; 
-        state->pos[j].y -= (state->pos[j].z + 0.0005) * state->vel[j].y / state->vel[j].z;
-        state->pos[j].z -= (state->pos[j].z + 0.0005);
+        double distance = state->pos[j].z - field->min_z;
+        state->pos[j].x -= distance * state->vel[j].x / state->vel[j].z; 
+        state->pos[j].y -= distance * state->vel[j].y / state->vel[j].z;
+        state->pos[j].z -= distance;
     }
 
     const long steps = 1500;

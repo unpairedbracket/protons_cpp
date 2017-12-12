@@ -60,6 +60,18 @@ void FlashField::initFields() {
         printf("Overall bounds [%f, %f, %f] -> [%f, %f, %f]\n", xlim[0], ylim[0], zlim[0],
                                                  xlim[1], ylim[1], zlim[1]);
 
+        this->min_z = 0;
+        double corner_z;
+        for(int i = 0; i < 2; i++) {
+            for(int j = 0; j < 2; j++) {
+                for(int k = 0; k < 2; k++) {
+                    corner_z = xlim[i] * zaxis.x + ylim[j] * zaxis.y + zlim[k] * zaxis.z;
+                    if(corner_z < this->min_z) this->min_z = corner_z;
+                }
+            }
+        }
+        printf("Minimum z: %f\n", this->min_z);
+
         dataspace.close();
         bounding_boxes.close();
 

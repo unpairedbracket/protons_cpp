@@ -3,6 +3,8 @@
 using std::abs;
 
 void CocoonField::initFields() {
+    this->min_z = this->leeway * (this->r_scale*sqrt(zaxis.x*zaxis.x + zaxis.y * zaxis.y) - abs(this->z_scale * zaxis.z));
+
     #pragma omp parallel for
     for(long j = 0; j < this->N; j++) {
         this->E[j] = { 0.0, 0.0, 0.0 };
