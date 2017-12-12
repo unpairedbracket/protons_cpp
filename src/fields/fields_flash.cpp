@@ -41,9 +41,24 @@ void FlashField::initFields() {
             bounds_min[i] = {0.01*(bounds[index(i,0,0)]-this->origin.x), 0.01*(bounds[index(i,1,0)]-this->origin.y), 0.01*(bounds[index(i,2,0)]-this->origin.z)};
             bounds_max[i] = {0.01*(bounds[index(i,0,1)]-this->origin.x), 0.01*(bounds[index(i,1,1)]-this->origin.y), 0.01*(bounds[index(i,2,1)]-this->origin.z)};
 
+            if(i == 0) {
+                this->xlim[0] = bounds_min[0].x; this->xlim[1] = bounds_max[0].x;
+                this->ylim[0] = bounds_min[0].y; this->ylim[1] = bounds_max[0].y;
+                this->zlim[0] = bounds_min[0].z; this->zlim[1] = bounds_max[0].z;
+            } else {
+                if(bounds_min[i].x < xlim[0]) xlim[0] = bounds_min[i].x;
+                if(bounds_max[i].x > xlim[1]) xlim[1] = bounds_max[i].x;
+                if(bounds_min[i].y < ylim[0]) ylim[0] = bounds_min[i].y;
+                if(bounds_max[i].y > ylim[1]) ylim[1] = bounds_max[i].y;
+                if(bounds_min[i].z < zlim[0]) zlim[0] = bounds_min[i].z;
+                if(bounds_max[i].z > zlim[1]) zlim[1] = bounds_max[i].z;
+            }
+
             printf("[%f, %f, %f] -> [%f, %f, %f]\n", bounds_min[i].x, bounds_min[i].y, bounds_min[i].z,
                                                      bounds_max[i].x, bounds_max[i].y, bounds_max[i].z);
         }
+        printf("Overall bounds [%f, %f, %f] -> [%f, %f, %f]\n", xlim[0], ylim[0], zlim[0],
+                                                 xlim[1], ylim[1], zlim[1]);
 
         dataspace.close();
         bounding_boxes.close();
@@ -300,3 +315,99 @@ void FlashField::getFields(ParticleState* state) {
     }
 }
 
+void FlashField::invalidatePositions(ParticleState* state) {
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            // Testing and tracing to min/max x planes
+            double distance = state->pos[j].x - this->xlim[0];
+            if(distance < 0) { // We're behind minimum x
+                // Are we moving back towards the minimum x plane?
+                if(state->vel[j].x < 0) {
+                    // If no we're lost
+                    state->running[j] = false;
+                    #pragma omp atomic
+                    state->N_running--;
+                    continue;
+                } else {
+                    // If so let's just go there in one go
+                    state->pos[j].x -= distance; 
+                    state->pos[j].y -= distance * state->vel[j].y / state->vel[j].x;
+                    state->pos[j].z -= distance * state->vel[j].z / state->vel[j].x;
+                }
+            } else {
+                // Same for the maximum x plane
+                distance = state->pos[j].x - this->xlim[1];
+                if(distance > 0) {
+                    if(state->vel[j].x > 0) {
+                        state->running[j] = false;
+                        #pragma omp atomic
+                        state->N_running--;
+                        continue;
+                    } else {
+                        state->pos[j].x -= distance; 
+                        state->pos[j].y -= distance * state->vel[j].y / state->vel[j].x;
+                        state->pos[j].z -= distance * state->vel[j].z / state->vel[j].x;
+                    }
+                }
+            }
+            // Testing and tracing to min/max y planes
+            distance = state->pos[j].y - this->ylim[0];
+            if(distance < 0) {
+                if(state->vel[j].y < 0) {
+                    state->running[j] = false;
+                    #pragma omp atomic
+                    state->N_running--;
+                    continue;
+                } else {
+                    state->pos[j].x -= distance * state->vel[j].x / state->vel[j].y; 
+                    state->pos[j].y -= distance;
+                    state->pos[j].z -= distance * state->vel[j].z / state->vel[j].y;
+                }
+            } else {
+                distance = state->pos[j].y - this->ylim[1];
+                if(distance > 0) {
+                    if(state->vel[j].y > 0) {
+                        state->running[j] = false;
+                        #pragma omp atomic
+                        state->N_running--;
+                        continue;
+                    } else {
+                        state->pos[j].x -= distance * state->vel[j].x / state->vel[j].y; 
+                        state->pos[j].y -= distance;
+                        state->pos[j].z -= distance * state->vel[j].z / state->vel[j].y;
+                    }
+                }
+            }
+            // Testing and tracing to min/max z planes
+            distance = state->pos[j].z - this->zlim[0];
+            if(distance < 0) {
+                if(state->vel[j].z < 0) {
+                    state->running[j] = false;
+                    #pragma omp atomic
+                    state->N_running--;
+                    continue;
+                } else {
+                    state->pos[j].x -= distance * state->vel[j].x / state->vel[j].z; 
+                    state->pos[j].y -= distance * state->vel[j].y / state->vel[j].z;
+                    state->pos[j].z -= distance;
+                }
+            } else {
+                distance = state->pos[j].z - this->zlim[1];
+                if(distance > 0) {
+                    if(state->vel[j].z > 0) {
+                        state->running[j] = false;
+                        #pragma omp atomic
+                        state->N_running--;
+                        continue;
+                    } else {
+                        state->pos[j].x -= distance * state->vel[j].x / state->vel[j].z; 
+                        state->pos[j].y -= distance * state->vel[j].y / state->vel[j].z;
+                        state->pos[j].z -= distance;
+                    }
+                }
+            }
+        }
+    }
+}

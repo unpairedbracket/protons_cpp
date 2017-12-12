@@ -12,6 +12,7 @@ struct FieldStructure {
 
     virtual void initFields() = 0;
     virtual void getFields(ParticleState* state) = 0;
+    virtual void invalidatePositions(ParticleState* state) = 0;
 
     void initFieldArrays(long N);
     void orientBeam(ParticleState* state);

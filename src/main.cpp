@@ -71,14 +71,15 @@ int main(int argc, char *argv[]) {
         begin = std::chrono::steady_clock::now();
 
         integrator->step(state, field);
-        field->deorientBeam(state);
+        field->invalidatePositions(state);
         invalidateStates(state);
 
         #ifdef USE_GL
+            field->deorientBeam(state);
             updateBuffers(&state->pos[0].x, state->running, state->N);
             draw(state->N, 0, nullptr);
+            field->orientBeam(state);
         #endif
-        field->orientBeam(state);
 
         end = std::chrono::steady_clock::now();
         double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
@@ -112,9 +113,7 @@ void invalidateStates(ParticleState* particles) {
     for(long j = 0; j < particles->N; j++) {
         if(particles->running[j])
         {
-            if(particles->pos[j].z > 0.0005
-            || particles->pos[j].x*particles->pos[j].x + particles->pos[j].y*particles->pos[j].y > 2 * 0.0005*0.0005
-            || particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > c*c 
+            if(particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > c*c 
             ) {
                 particles->running[j] = false;
                 #pragma omp atomic

@@ -20,8 +20,11 @@ struct FlashField : FieldStructure {
     Vector3* bounds_min;
     Vector3* bounds_max;
     Vector3 origin;
+    double xlim[2], ylim[2], zlim[2];
 
     void initFields() override;
-    bool findBlock(Vector3 position, int &block);
     void getFields(ParticleState* state) override;
+    void invalidatePositions(ParticleState* state) override;
+
+    bool findBlock(Vector3 position, int &block);
 };
