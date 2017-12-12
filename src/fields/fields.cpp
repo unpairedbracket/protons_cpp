@@ -22,6 +22,34 @@ void FieldStructure::initFieldArrays(long N) {
         zaxis.z * xaxis.x,
         zaxis.x * xaxis.y - zaxis.y * xaxis.x
     };
+    
+    Vector3 tmp = { // xaxis after phi rotation
+        xaxis.x * cos(phi) - yaxis.x * sin(phi),
+        xaxis.y * cos(phi) - yaxis.y * sin(phi),
+        xaxis.z * cos(phi) - yaxis.z * sin(phi)
+    };
+
+    yaxis = {
+        yaxis.x * cos(phi) + xaxis.x * sin(phi),
+        yaxis.y * cos(phi) + xaxis.y * sin(phi),
+        yaxis.z * cos(phi) + xaxis.z * sin(phi)
+    };
+
+    xaxis = tmp;
+
+    tmp = { // zaxis after theta rotation
+        zaxis.x * cos(theta) - yaxis.x * sin(theta),
+        zaxis.y * cos(theta) - yaxis.y * sin(theta),
+        zaxis.z * cos(theta) - yaxis.z * sin(theta)
+    };
+    
+    yaxis = {
+        yaxis.x * cos(theta) + zaxis.x * sin(theta),
+        yaxis.y * cos(theta) + zaxis.y * sin(theta),
+        yaxis.z * cos(theta) + zaxis.z * sin(theta)
+    };
+
+    zaxis = tmp;
 }
 
 void FieldStructure::orientBeam(ParticleState* state) {

@@ -3,4 +3,6 @@ type: flash
 filename: fields.h5
 origin: [0, 0, 0]
 axis: [0, 0, 1]
+theta: 0
+phi: 0
 ...

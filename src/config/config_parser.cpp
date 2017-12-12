@@ -266,6 +266,8 @@ FieldStructure* getFieldsInfo() {
         }
 
         field->zaxis = {fieldNode["axis"][0].as<double>(), fieldNode["axis"][1].as<double>(), fieldNode["axis"][2].as<double>()};
+        field->theta = fieldNode["theta"].as<double>();
+        field->phi = fieldNode["phi"].as<double>();
     }
 
     return field;
