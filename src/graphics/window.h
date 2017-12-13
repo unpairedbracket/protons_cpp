@@ -16,6 +16,10 @@
 
 #include "shaders.h"
 
+#include "../sources/source.h"
+#include "../detectors/detector.h"
+#include "../fields/fields.h"
+
 static GLFWwindow* window;
 static GLuint VertexArrayID, programID, MatrixID;
 static GLuint vertexbuffers[2];
@@ -24,7 +28,7 @@ static glm::mat4 Projection, View, Model, mvp;
 
 int openWindow(const char * vertex_file_path,const char * fragment_file_path);
 
-int setupMatrix(double sourceDistance, double detectorDistance, double openingAngle);
+int setupMatrix(ParticleSource* source, FieldStructure* field, ParticleDetector* detector);
 int setupBuffers(double pos[], bool running[], long N);
 int updateBuffers(double pos[], bool running[], long N);
 

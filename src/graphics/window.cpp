@@ -1,6 +1,7 @@
 #include "window.h"
 
 #include <png.h>
+#include <glm/gtc/type_ptr.hpp>
 
 int openWindow(const char * vertex_file_path,const char * fragment_file_path) {
     // Initialise GLFW
@@ -42,8 +43,12 @@ int openWindow(const char * vertex_file_path,const char * fragment_file_path) {
     return 0;
 }
 
-int setupMatrix(double sourceDistance, double detectorDistance, double openingAngle) {
-    Projection = glm::perspective(2 * openingAngle, 1.0, sourceDistance-0.0005, sourceDistance + detectorDistance);
+int setupMatrix(ParticleSource* source, FieldStructure* field, ParticleDetector* detector) {
+    double sourceDistance = source->distance;
+    double openingAngle = source->divergence;
+    double detectorDistance = detector->distance;
+
+    Projection = glm::perspective(2 * openingAngle, 1.0, sourceDistance+field->min_z, sourceDistance + detectorDistance*1.01);
 
     // Camera matrix
     View = glm::lookAt(
@@ -53,7 +58,14 @@ int setupMatrix(double sourceDistance, double detectorDistance, double openingAn
     );
 
     // Model matrix : an identity matrix (model will be at the origin)
-    Model = glm::mat4(1.0f);
+    double matrix[16] = {
+        field->xaxis.x, field->yaxis.x, field->zaxis.x, 0,
+        field->xaxis.y, field->yaxis.y, field->zaxis.y, 0,
+        field->xaxis.z, field->yaxis.z, field->zaxis.z, 0,
+        0, 0, 0, 1
+    };
+
+    Model = glm::make_mat4(matrix);
     // Our ModelViewProjection : multiplication of our 3 matrices
     mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
 

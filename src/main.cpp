@@ -55,9 +55,11 @@ int main(int argc, char *argv[]) {
     double sumTimes = 0;
     double sumSqTimes = 0;
 
+    field->orientBeam(state);
+    
     #ifdef USE_GL
         openWindow("shaders/shader.vert", "shaders/shader.frag");
-        setupMatrix(source->distance, detector->distance * 1.01, source->divergence);
+        setupMatrix(source, field, detector);
         setupBuffers(&state->pos[0].x, state->running, state->N);
         updateBuffers(&state->pos[0].x, state->running, state->N);
         draw(state->N, 0, nullptr);
@@ -66,7 +68,6 @@ int main(int argc, char *argv[]) {
 
     long i;
 
-    field->orientBeam(state);
 
     for(i = 0; i < steps && state->N_running > 0; i++) {
         begin = std::chrono::steady_clock::now();
@@ -76,10 +77,8 @@ int main(int argc, char *argv[]) {
         invalidateStates(state);
 
         #ifdef USE_GL
-            field->deorientBeam(state);
             updateBuffers(&state->pos[0].x, state->running, state->N);
             draw(state->N, 0, nullptr);
-            field->orientBeam(state);
         #endif
 
         end = std::chrono::steady_clock::now();
@@ -95,9 +94,11 @@ int main(int argc, char *argv[]) {
     detector->finalPush(state);
 
     #ifdef USE_GL
+    field->orientBeam(state);
         char name[11] = "output.png";
         updateBuffers(&state->pos[0].x, state->running, state->N);
-        draw(state->N, 10, name, true);
+        draw(state->N, 10, name, false);
+    field->deorientBeam(state);
     #endif
     
     std::cout << "Average time taken: " << sumTimes / (1000.0 * i) << " us (" << sumTimes / (1000.0 * i * state->N) << " us per particle)" << std::endl;
