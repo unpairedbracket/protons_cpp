@@ -28,6 +28,9 @@ int main(int argc, char *argv[]) {
 
     ParticleState* state = source->genParticleState(particleType);
 
+    Interpolator* interp = getInterpolatorInfo();
+    bool shouldInterpolate = interp;
+
     //Object
     FieldStructure* field = getFieldsInfo();
     field->initFieldArrays(state->N);
@@ -43,6 +46,9 @@ int main(int argc, char *argv[]) {
         state->pos[j].y -= distance * state->vel[j].y / state->vel[j].z;
         state->pos[j].z -= distance;
     }
+
+    if(shouldInterpolate)
+        interp->setSamplePoints(state);
 
     const long steps = 1500;
 
@@ -90,21 +96,46 @@ int main(int argc, char *argv[]) {
     printf("%li iterations taken \n", i);
 
     field->deorientBeam(state);
-    
-    detector->finalPush(state);
 
-    #ifdef USE_GL
-    field->orientBeam(state);
-        char name[11] = "output.png";
-        updateBuffers(&state->pos[0].x, state->running, state->N);
-        draw(state->N, 10, name, false);
-    field->deorientBeam(state);
-    #endif
-    
+    if(shouldInterpolate)
+        interp->setSampleValues(state);
+
+    if(!shouldInterpolate) {
+        detector->finalPush(state);
+
+        #ifdef USE_GL
+            field->orientBeam(state);
+            char name[11] = "output.png";
+            updateBuffers(&state->pos[0].x, state->running, state->N);
+            draw(state->N, 10, name, true);
+            field->deorientBeam(state);
+        #endif
+        detector->output(state);
+    } else {
+        for(i = 0; i < interp->iterations; i++) {
+            printf("Initialising interpolation state...");
+            interp->initState(particleType);
+            printf(" DONE\n");
+            printf("Interpolating %ld particles...", interp->interpParticles->N);
+            interp->interpolate();
+            printf(" DONE\n");
+            detector->finalPush(interp->interpParticles);
+            #ifdef USE_GL
+                field->orientBeam(interp->interpParticles);
+                char name[11] = "output.png";
+
+                setupBuffers(&interp->interpParticles->pos[0].x, interp->interpParticles->running, interp->interpParticles->N);
+                updateBuffers(&interp->interpParticles->pos[0].x, interp->interpParticles->running, interp->interpParticles->N);
+                draw(interp->interpParticles->N, 10, name, true);
+                field->deorientBeam(interp->interpParticles);
+            #endif
+            detector->output(interp->interpParticles);
+        }
+    }
+
     std::cout << "Average time taken: " << sumTimes / (1000.0 * i) << " us (" << sumTimes / (1000.0 * i * state->N) << " us per particle)" << std::endl;
     std::cout << "Standard Deviation: " << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / 1000.0 << " us (" << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / (1000.0 * state->N) << " us per particle)" << std::endl;
 
-    detector->output(state);
 
     integrator->deinit();
     return 0;

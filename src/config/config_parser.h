@@ -11,6 +11,7 @@
 #include "../fields/fields.h"
 #include "../integrators/integrator.h"
 #include "../detectors/detector.h"
+#include "../interpolation/interpolator.h"
 
 static YAML::Node config;
 static YAML::Node defaults;
@@ -22,7 +23,9 @@ void replace_with_file(YAML::Node node, std::string prop);
 
 ParticleInfo* getParticleInfo();
 ParticleSource* getSourceInfo();
+ParticleSource* getSourceInfo(YAML::Node sourceNode);
 FieldStructure* getFieldsInfo();
 ParticleDetector* getDetectorInfo();
 Integrator* getIntegratorInfo();
+Interpolator* getInterpolatorInfo();
 

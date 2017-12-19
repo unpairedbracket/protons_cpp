@@ -15,6 +15,7 @@ void load_config(const std::string& filename, const std::string& defaults_filena
     if(!config["integrator"]) config["integrator"] = defaults["integrator"];
     if(!config["detector"]) config["detector"] = defaults["detector"];
     if(!config["middleware"]) config["middleware"] = defaults["middleware"];
+    if(!config["interpolation"]) config["interpolation"] = defaults["interpolation"];
 
     resolve_defaults(config);
 
@@ -26,6 +27,7 @@ void resolve_defaults(YAML::Node node) {
     replace_with_file(node, "field");
     replace_with_file(node, "integrator");
     replace_with_file(node, "detector");
+    replace_with_file(node, "interpolation");
 }
 
 void replace_with_file(YAML::Node node, std::string prop) {
@@ -97,16 +99,12 @@ ParticleInfo* getParticleInfo() {
 }
 
 ParticleSource* getSourceInfo() {
+    return getSourceInfo(config["source"]);
+}
+
+ParticleSource* getSourceInfo(YAML::Node sourceNode) {
 
     ParticleSource* source = nullptr;
-    YAML::Node sourceNode;
-
-    if(!config["source"]) {
-        std::cout << "No source type specified. Defaulting to helix." << std::endl;
-        config["source"] = "helix";
-    }
-
-    sourceNode = config["source"];
 
     if(sourceNode.IsScalar()) {
         std::cout << "Source type only specified by name. Will use defaults for that type" << std::endl;
@@ -360,3 +358,14 @@ Integrator* getIntegratorInfo() {
 
 }
 
+Interpolator* getInterpolatorInfo() {
+    Interpolator* interpolator = nullptr;
+    YAML::Node interpolatorNode = config["interpolation"];
+
+    if(interpolatorNode.IsMap()) {
+        std::string interpolatorType = interpolatorNode["type"].as<std::string>();
+
+        }
+    }
+
+    return interpolator;

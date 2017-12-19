@@ -12,4 +12,6 @@ detector: none
 integrator: RK4
 
 middleware: none
+
+interpolation: none
 ...

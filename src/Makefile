@@ -16,6 +16,7 @@ protons:
 		detectors/*.cpp \
 		fields/*.cpp \
 		integrators/*.cpp \
+		interpolation/*.cpp \
 		particles/*.cpp \
 		sources/*.cpp \
 		util/*.cpp \
@@ -29,6 +30,7 @@ protons-headless:
 		detectors/*.cpp \
 		fields/*.cpp \
 		integrators/*.cpp \
+		interpolation/*.cpp \
 		particles/*.cpp \
 		sources/*.cpp \
 		util/*.cpp \
