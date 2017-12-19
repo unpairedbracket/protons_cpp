@@ -8,21 +8,27 @@ void FieldStructure::initFieldArrays(long N) {
     this->E = new Vector3[N];
     this->B = new Vector3[N];
 
-    double len = sqrt(zaxis.x * zaxis.x
-                    + zaxis.y * zaxis.y
-                    + zaxis.z * zaxis.z);
+    if(zaxis.x == 0 && zaxis.y == 0) {
+        xaxis = {1, 0, 0};
+        yaxis = {0, 1, 0};
+        zaxis = {0, 0, 1};
+    } else {
+        double len = sqrt(zaxis.x * zaxis.x
+                        + zaxis.y * zaxis.y
+                        + zaxis.z * zaxis.z);
 
-    zaxis = {zaxis.x / len, zaxis.y / len, zaxis.z / len}; // z'
-    xaxis = {-zaxis.y, zaxis.x, 0}; // x' = z x z'
-    len = sqrt(xaxis.x * xaxis.x + xaxis.y * xaxis.y);
-    xaxis.x /= len; xaxis.y /= len;
-    
-    yaxis = { // y' = z' x x'
-                          - zaxis.z * xaxis.y,
-        zaxis.z * xaxis.x,
-        zaxis.x * xaxis.y - zaxis.y * xaxis.x
-    };
-    
+        zaxis = {zaxis.x / len, zaxis.y / len, zaxis.z / len}; // z'
+        xaxis = {-zaxis.y, zaxis.x, 0}; // x' = z x z'
+        len = sqrt(xaxis.x * xaxis.x + xaxis.y * xaxis.y);
+        xaxis.x /= len; xaxis.y /= len;
+
+        yaxis = { // y' = z' x x'
+                              - zaxis.z * xaxis.y,
+            zaxis.z * xaxis.x,
+            zaxis.x * xaxis.y - zaxis.y * xaxis.x
+        };
+    }
+
     Vector3 tmp = { // xaxis after phi rotation
         xaxis.x * cos(phi) - yaxis.x * sin(phi),
         xaxis.y * cos(phi) - yaxis.y * sin(phi),
