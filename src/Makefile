@@ -4,7 +4,7 @@ EXTLIB      = -L$(HDF_INSTALL)/lib
 CC          =clang++
 CFLAGS      = -O3 -std=c++14 -fopenmp=libomp
 GL_FLAG     = -DUSE_GL=true
-LIB         = -ldl -lsz -lz -lm -lyaml-cpp
+LIB         = -ldl -lsz -lz -lm -lyaml-cpp -lCGAL -lCGAL_Core -lgmp
 GL_LIB      = -lGL -lX11 -lGLU -lGLEW -lglfw -lpng
 
 INCLUDE     = -I$(HDF_INSTALL)/include
