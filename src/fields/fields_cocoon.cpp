@@ -1,9 +1,10 @@
 #include "fields_cocoon.h"
+#include <cstdio>
 
 using std::abs;
 
 void CocoonField::initFields() {
-    this->min_z = this->leeway * (this->r_scale*sqrt(zaxis.x*zaxis.x + zaxis.y * zaxis.y) - abs(this->z_scale * zaxis.z));
+    this->min_z = - this->leeway * (this->r_scale*sqrt(zaxis.x*zaxis.x + zaxis.y * zaxis.y) + abs(this->z_scale * zaxis.z));
 
     #pragma omp parallel for
     for(long j = 0; j < this->N; j++) {
@@ -17,7 +18,7 @@ void CocoonField::getFields(ParticleState* state) {
     for(long j = 0; j < this->N; j++) {
         if(state->running[j])
         {
-            double RscaledSquared = state->pos[j].x*state->pos[j].x + state->pos[j].y*state->pos[j].y / (this->r_scale*this->r_scale);
+            double RscaledSquared = (state->pos[j].x*state->pos[j].x + state->pos[j].y*state->pos[j].y) / (this->r_scale*this->r_scale);
             double Zscaled = state->pos[j].z/this->z_scale;
             double BphiOnR = this->B_strength * exp(-RscaledSquared - Zscaled*Zscaled) / this->r_scale;
 
