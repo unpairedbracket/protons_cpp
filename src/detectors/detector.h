@@ -28,3 +28,12 @@ struct DetectorHDF5 : ParticleDetector {
     void detect(ParticleState* state) override;
     void output() override;
 };
+
+struct DetectorFluence : ParticleDetector {
+    int detectorPixels[2];
+    double detectorSize[2];
+    double* detectorArray;
+
+    void detect(ParticleState* state) override;
+    void output() override;
+};

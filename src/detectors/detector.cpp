@@ -1,5 +1,6 @@
 #include "detector.h"
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 
@@ -67,6 +68,50 @@ void DetectorHDF5::output() {
         dataspace.close();
         dataset_pos.close();
         dataset_vel.close();
+        file.close();
+    } catch(FileIException error) {
+    	error.printError();
+    } catch(DataSetIException error) {
+        error.printError();
+    }
+}
+
+void DetectorFluence::detect(ParticleState* state) {
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        double xfrac = state->pos[j].x / this->detectorSize[0] + 0.5;
+        double yfrac = state->pos[j].y / this->detectorSize[1] + 0.5;
+        if(xfrac >= 0 && xfrac <= 1 && yfrac >= 0 && yfrac <= 1) {
+            int xcell = floor(this->detectorPixels[0] * xfrac);
+            int ycell = floor(this->detectorPixels[1] * yfrac);
+            int idx = ycell * this->detectorPixels[0] + xcell;
+            #pragma omp atomic
+            detectorArray[idx]++;
+        }
+    }
+}
+
+void DetectorFluence::output() {
+    using namespace H5;
+    try {
+        Exception::dontPrint();
+
+        H5File file("fluence.h5", H5F_ACC_TRUNC);
+
+        hsize_t dims[2];               // dataset dimensions
+        dims[0] = this->detectorPixels[1];
+        dims[1] = this->detectorPixels[0];
+        DataSpace dataspace(2, dims);
+
+        // Create the dataset.      
+        DataSet dataset_fluence = file.createDataSet("fluence",  PredType::IEEE_F64BE, dataspace);
+
+        // Write the data to the dataset using default memory space, file
+        // space, and transfer properties.
+        dataset_fluence.write(this->detectorArray, PredType::NATIVE_DOUBLE);
+
+        dataspace.close();
+        dataset_fluence.close();
         file.close();
     } catch(FileIException error) {
     	error.printError();
