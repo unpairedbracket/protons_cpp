@@ -3,6 +3,7 @@
 #include "../fields/fields_cocoon.h"
 #include "../fields/fields_flash.h"
 #include "../interpolation/natural.h"
+#include "../interpolation/linear.h"
 #include "../util/physical_constants.h"
 
 void load_config(const std::string& filename, const std::string& defaults_filename) {
@@ -366,7 +367,13 @@ Interpolator* getInterpolatorInfo() {
     if(interpolatorNode.IsMap()) {
         std::string interpolatorType = interpolatorNode["type"].as<std::string>();
 
-        if (interpolatorType.compare("natural_neighbor") == 0) {
+        if (interpolatorType.compare("linear") == 0) {
+            interpolator = new LinearInterpolator();
+
+            replace_with_file(interpolatorNode, "source");
+            interpolator->interpSource = getSourceInfo(interpolatorNode["source"]);
+            interpolator->iterations = interpolatorNode["iterations"].as<int>();
+        } else if (interpolatorType.compare("natural_neighbor") == 0) {
             interpolator = new NaturalInterpolator();
 
             replace_with_file(interpolatorNode, "source");
