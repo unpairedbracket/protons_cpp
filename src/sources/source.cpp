@@ -1,6 +1,7 @@
 #include "source.h"
 
 #include <cassert>
+#include <cstdio>
 
 #include "../util/math.h"
 
@@ -58,10 +59,33 @@ ParticleState* HelixSource::genParticleState(ParticleInfo* particleType, Particl
     }
 
     return state;
+}
 
+ParticleState* ScatterSource::genParticleState(ParticleInfo* particleType, ParticleState* existing) {
+    ParticleState* state;
+    if(existing) {
+        state = existing;
+    } else {
+        state = new ParticleState();
+        initParticleState(state, particleType, this->N);
+    }
 
+    initPosPointSource(state, this->distance);
 
+    double z_min = cos(this->divergence);
 
+    double speed = sqrt(2 * this->energy / particleType->mass);
+    for(long i = 0; i < state->N; i++) {
+        double z = zrand(re);
+        double phi = phirand(re);
+        double rho = sqrt(1 - z*z);
+
+        state->vel[i].x = speed * rho * cos(phi);
+        state->vel[i].y = speed * rho * sin(phi);
+        state->vel[i].z = speed * z;
+    }
+
+    return state;
 }
 
 void initPosPointSource(ParticleState* particles, double distance) {
