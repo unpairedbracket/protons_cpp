@@ -19,7 +19,11 @@ void ParticleDetector::finalPush(ParticleState* state) {
     }
 }
 
-void DetectorTextFile::output(ParticleState* state) {
+void DetectorTextFile::detect(ParticleState* state) {
+    this->state = state;
+}
+
+void DetectorTextFile::output() {
     std::ofstream posfile;
     posfile.open("pos.txt");
     for(long i = 0; i < state->N; i++) {
@@ -35,7 +39,11 @@ void DetectorTextFile::output(ParticleState* state) {
     velfile.close();
 }
 
-void DetectorHDF5::output(ParticleState* state) {
+void DetectorHDF5::detect(ParticleState* state) {
+    this->state = state;
+}
+
+void DetectorHDF5::output() {
     using namespace H5;
     try {
         Exception::dontPrint();

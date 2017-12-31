@@ -110,7 +110,8 @@ int main(int argc, char *argv[]) {
             draw(state->N, 10, name, true);
             field->deorientBeam(state);
         #endif
-        detector->output(state);
+        detector->detect(state);
+        detector->output();
     } else {
         for(i = 0; i < interp->iterations; i++) {
             printf("Initialising interpolation state...");
@@ -129,8 +130,9 @@ int main(int argc, char *argv[]) {
                 draw(interp->interpParticles->N, 10, name, true);
                 field->deorientBeam(interp->interpParticles);
             #endif
-            detector->output(interp->interpParticles);
+            detector->detect(interp->interpParticles);
         }
+        detector->output();
     }
 
     std::cout << "Average time taken: " << sumTimes / (1000.0 * i) << " us (" << sumTimes / (1000.0 * i * state->N) << " us per particle)" << std::endl;
