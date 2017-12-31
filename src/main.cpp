@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
         double distance = state->pos[j].z - field->min_z;
-        state->pos[j].x -= distance * state->vel[j].x / state->vel[j].z; 
+        state->pos[j].x -= distance * state->vel[j].x / state->vel[j].z;
         state->pos[j].y -= distance * state->vel[j].y / state->vel[j].z;
         state->pos[j].z -= distance;
     }
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     double sumSqTimes = 0;
 
     field->orientBeam(state);
-    
+
     #ifdef USE_GL
         openWindow("shaders/shader.vert", "shaders/shader.frag");
         setupMatrix(source, field, detector);
@@ -73,7 +73,6 @@ int main(int argc, char *argv[]) {
     #endif
 
     long i;
-
 
     for(i = 0; i < steps && state->N_running > 0; i++) {
         begin = std::chrono::steady_clock::now();
@@ -95,6 +94,9 @@ int main(int argc, char *argv[]) {
     }
     printf("%li iterations taken \n", i);
 
+    std::cout << "Average time taken: " << sumTimes / (1000.0 * i) << " us (" << sumTimes / (1000.0 * i * state->N) << " us per particle)" << std::endl;
+    std::cout << "Standard Deviation: " << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / 1000.0 << " us (" << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / (1000.0 * state->N) << " us per particle)" << std::endl;
+
     field->deorientBeam(state);
 
     if(shouldInterpolate)
@@ -113,31 +115,30 @@ int main(int argc, char *argv[]) {
         detector->detect(state);
         detector->output();
     } else {
-        for(i = 0; i < interp->iterations; i++) {
-            printf("Initialising interpolation state...");
+        begin = std::chrono::steady_clock::now();
+        for(int i = 0; i < interp->iterations; i++) {
+            printf("Initialising particles for iteration %d... ", i);
             interp->initState(particleType);
             printf(" DONE\n");
             printf("Interpolating %ld particles...", interp->interpParticles->N);
             interp->interpolate();
-            printf(" DONE\n");
+            printf("DONE\n");
             detector->finalPush(interp->interpParticles);
             #ifdef USE_GL
                 field->orientBeam(interp->interpParticles);
                 char name[11] = "output.png";
-
                 setupBuffers(&interp->interpParticles->pos[0].x, interp->interpParticles->running, interp->interpParticles->N);
                 updateBuffers(&interp->interpParticles->pos[0].x, interp->interpParticles->running, interp->interpParticles->N);
-                draw(interp->interpParticles->N, 10, name, true);
+                draw(interp->interpParticles->N, 10, name, false);
                 field->deorientBeam(interp->interpParticles);
             #endif
             detector->detect(interp->interpParticles);
         }
         detector->output();
+        end = std::chrono::steady_clock::now();
+        double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
+        printf("Interpolation took %f microsec per particle\n", nanoTaken/(1000.0 * interp->iterations * interp->interpParticles->N));
     }
-
-    std::cout << "Average time taken: " << sumTimes / (1000.0 * i) << " us (" << sumTimes / (1000.0 * i * state->N) << " us per particle)" << std::endl;
-    std::cout << "Standard Deviation: " << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / 1000.0 << " us (" << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / (1000.0 * state->N) << " us per particle)" << std::endl;
-
 
     integrator->deinit();
     return 0;
@@ -148,7 +149,7 @@ void invalidateStates(ParticleState* particles) {
     for(long j = 0; j < particles->N; j++) {
         if(particles->running[j])
         {
-            if(particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > c*c 
+            if(particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > c*c
             ) {
                 particles->running[j] = false;
                 #pragma omp atomic
