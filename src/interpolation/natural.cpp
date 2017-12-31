@@ -29,7 +29,7 @@ void NaturalInterpolator::setSampleValues(ParticleState* sampleValues) {
 }
 
 void NaturalInterpolator::initState(ParticleInfo* type) {
-    this->interpParticles = this->interpSource->genParticleState(type);
+    this->interpParticles = this->interpSource->genParticleState(type, this->interpParticles);
 }
 
 void NaturalInterpolator::interpolate() {
