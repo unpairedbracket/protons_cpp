@@ -4,9 +4,14 @@
 
 #include "../util/math.h"
 
-ParticleState* SquareSource::genParticleState(ParticleInfo* particleType) {
-    ParticleState* state = new ParticleState();
-    initParticleState(state, particleType, this->x_extent * this->y_extent);
+ParticleState* SquareSource::genParticleState(ParticleInfo* particleType, ParticleState* existing) {
+    ParticleState* state;
+    if(existing) {
+        state = existing;
+    } else {
+        state = new ParticleState();
+        initParticleState(state, particleType, this->x_extent * this->y_extent);
+    }
 
     initPosPointSource(state, this->distance);
 
@@ -27,9 +32,14 @@ ParticleState* SquareSource::genParticleState(ParticleInfo* particleType) {
     return state;
 }
 
-ParticleState* HelixSource::genParticleState(ParticleInfo* particleType) {
-    ParticleState* state = new ParticleState();
-    initParticleState(state, particleType, this->N);
+ParticleState* HelixSource::genParticleState(ParticleInfo* particleType, ParticleState* existing) {
+    ParticleState* state;
+    if(existing) {
+        state = existing;
+    } else {
+        state = new ParticleState();
+        initParticleState(state, particleType, this->N);
+    }
 
     initPosPointSource(state, this->distance);
 
@@ -48,24 +58,10 @@ ParticleState* HelixSource::genParticleState(ParticleInfo* particleType) {
     }
 
     return state;
-}
 
-void initSource(SquareSource* source, double distance, double divergence, double energy, long x_extent, long y_extent) {
-    source->distance = distance;
-    source->divergence = divergence;
-    source->energy = energy;
 
-    source->x_extent = x_extent;
-    source->y_extent = y_extent;
-}
 
-void initSource(HelixSource* source, double distance, double divergence, double energy, double pitch, long N) {
-    source->distance = distance;
-    source->divergence = divergence;
-    source->energy = energy;
-    source->dphi = pitch;
 
-    source->N = N;
 }
 
 void initPosPointSource(ParticleState* particles, double distance) {
