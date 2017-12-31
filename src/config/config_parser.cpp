@@ -105,56 +105,12 @@ ParticleSource* getSourceInfo() {
 }
 
 ParticleSource* getSourceInfo(YAML::Node sourceNode) {
-
     ParticleSource* source = nullptr;
 
-    if(sourceNode.IsScalar()) {
-        std::cout << "Source type only specified by name. Will use defaults for that type" << std::endl;
-        YAML::Node parentNode;
-        parentNode["type"] = sourceNode;
-        sourceNode = parentNode;
-    }
-
     if(sourceNode.IsMap()) {
-        if(!sourceNode["type"]) {
-            std::cout << "No source type specified. Defaulting to cocoon." << std::endl;
-            sourceNode["type"] = "cocoon";
-        }
-
         std::string sourceType = sourceNode["type"].as<std::string>();
 
-        if(!(sourceType.compare("square") == 0
-          || sourceType.compare("helix") == 0
-          )) {
-            std::cout << "Unsupported source type '" << sourceType << "'. Defaulting to helix." << std::endl;
-            sourceType = std::string("helix");
-        }
-
         if(sourceType.compare("square") == 0) {
-            if(!sourceNode["N"]) {
-                std::cout << "No number of particles specified for source. Defaulting to 100x100" << std::endl;
-                sourceNode["N"] = YAML::Load("[100, 100]");
-            }
-            if(!sourceNode["N"].IsSequence() || sourceNode["N"].size() != 2) {
-                std::cout << "Wrong number of components of particle number specified: " << sourceNode["N"].size() << ". Expected 2: [x_number, y_number], defaulting to [100, 100]." << std::endl;
-                sourceNode["N"] = YAML::Load("[100, 100]");
-            }
-
-            if(!sourceNode["distance"]) {
-                std::cout << "No distance specified for source. Defaulting to 0.01" << std::endl;
-                sourceNode["distance"] = 0.01;
-            }
-
-            if(!sourceNode["divergence"]) {
-                std::cout << "No source divergence specified. Defaulting to 0.01 radian" << std::endl;
-                sourceNode["divergence"] = 0.01;
-            }
-
-            if(!sourceNode["energy"]) {
-                std::cout << "No source energy specified. Defaulting to 1 MeV" << std::endl;
-                sourceNode["energy"] = 1E6 * 1.6E-19;
-            }
-
             SquareSource* squareSource = new SquareSource();
             source = squareSource;
 
@@ -165,31 +121,10 @@ ParticleSource* getSourceInfo(YAML::Node sourceNode) {
             squareSource->energy = sourceNode["energy"].as<double>();
         }
         if(sourceType.compare("helix") == 0) {
-            if(!sourceNode["N"]) {
-                std::cout << "No number of particles specified for source. Defaulting to 10000" << std::endl;
-                sourceNode["N"] = 10000;
-            }
-
-            if(!sourceNode["distance"]) {
-                std::cout << "No distance specified for source. Defaulting to 0.01" << std::endl;
-                sourceNode["distance"] = 0.01;
-            }
-
-            if(!sourceNode["divergence"]) {
-                std::cout << "No source divergence specified. Defaulting to 0.01 radian" << std::endl;
-                sourceNode["divergence"] = 0.01;
-            }
-
-            if(!sourceNode["energy"]) {
-                std::cout << "No source energy specified. Defaulting to 1 MeV" << std::endl;
-                sourceNode["energy"] = 1E6 * 1.6E-19;
-            }
-
             if(!sourceNode["pitch"]) {
                 std::cout << "No source pitch specified. Defaulting to golden ratio * 2 pi" << std::endl;
                 sourceNode["pitch"] = (1 + sqrt(5)) * pi();
             }
-
 
             HelixSource* helixSource = new HelixSource();
             source = helixSource;
@@ -220,19 +155,7 @@ FieldStructure* getFieldsInfo() {
     FieldStructure* field = nullptr;
     YAML::Node fieldNode;
 
-    if(!config["field"]) {
-        std::cout << "No field type specified. Defaulting to cocoon." << std::endl;
-        config["field"] = "cocoon";
-    }
-
     fieldNode = config["field"];
-
-    if(fieldNode.IsScalar()) {
-        std::cout << "Field type only specified by name. Will use defaults for that type" << std::endl;
-        YAML::Node parentNode;
-        parentNode["type"] = fieldNode;
-        fieldNode = parentNode;
-    }
 
     if(fieldNode.IsMap()) {
         if(!fieldNode["type"]) {
@@ -277,7 +200,7 @@ FieldStructure* getFieldsInfo() {
         }
 
         field->zaxis = {fieldNode["axis"][0].as<double>(), fieldNode["axis"][1].as<double>(), fieldNode["axis"][2].as<double>()};
-        field->theta = fieldNode["theta"].as<double>();
+        field->theta = fieldNode["theta"].as<double>() * pi() / 180.0;
         field->phi = fieldNode["phi"].as<double>();
     }
 
