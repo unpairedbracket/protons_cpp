@@ -200,6 +200,17 @@ ParticleSource* getSourceInfo(YAML::Node sourceNode) {
             helixSource->energy = sourceNode["energy"].as<double>();
             helixSource->dphi = sourceNode["pitch"].as<double>();
         }
+        if(sourceType.compare("scatter") == 0) {
+            ScatterSource* scatterSource = new ScatterSource();
+            source = scatterSource;
+
+            scatterSource->N = sourceNode["N"].as<long>();
+            scatterSource->distance = sourceNode["distance"].as<double>();
+            scatterSource->divergence = sourceNode["divergence"].as<double>();
+            scatterSource->energy = sourceNode["energy"].as<double>();
+            scatterSource->phirand = std::uniform_real_distribution<double>(-pi(), pi());
+            scatterSource->zrand   = std::uniform_real_distribution<double>(cos(scatterSource->divergence), 1);
+        }
     }
 
     return source;
