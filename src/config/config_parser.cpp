@@ -292,14 +292,21 @@ ParticleDetector* getDetectorInfo() {
 
     if(detectorType.compare("none") == 0) {
         detector = new DetectorNoop();
-        detector->distance = 1;
     } else if(detectorType.compare("text") == 0) {
         detector = new DetectorTextFile();
-        detector->distance = detectorNode["distance"].as<double>();
     } else if(detectorType.compare("hdf5") == 0) {
         detector = new DetectorHDF5();
-        detector->distance = detectorNode["distance"].as<double>();
+    } else if(detectorType.compare("fluence") == 0) {
+        DetectorFluence* fluence = new DetectorFluence();
+        fluence->detectorPixels[0] = detectorNode["pixels"][0].as<int>();
+        fluence->detectorPixels[1] = detectorNode["pixels"][1].as<int>();
+        fluence->detectorSize[0] = detectorNode["size"][0].as<double>();
+        fluence->detectorSize[1] = detectorNode["size"][1].as<double>();
+        fluence->detectorArray = new double[fluence->detectorPixels[0]*fluence->detectorPixels[1]];
+        detector = fluence;
     }
+
+    detector->distance = detectorNode["distance"].as<double>();
 
     return detector;
 }
