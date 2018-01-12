@@ -1,5 +1,6 @@
 #include "fields_cocoon.h"
 #include <cstdio>
+#include <cmath>
 
 using std::abs;
 

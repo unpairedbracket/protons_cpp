@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cmath>
-
 #include "fields.h"
 
 struct CocoonField : FieldStructure {

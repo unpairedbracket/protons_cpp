@@ -2,6 +2,7 @@
 
 #include <H5Cpp.h>
 #include <cassert>
+#include <cmath>
 
 void FlashField::initFields() {
     using namespace H5;
