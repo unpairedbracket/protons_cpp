@@ -2,6 +2,7 @@
 
 #include "../fields/fields_cocoon.h"
 #include "../fields/fields_flash.h"
+#include "../fields/fields_cylindrical.h"
 #include "../interpolation/natural.h"
 #include "../interpolation/linear.h"
 #include "../util/physical_constants.h"
@@ -165,13 +166,6 @@ FieldStructure* getFieldsInfo() {
 
         std::string fieldType = fieldNode["type"].as<std::string>();
 
-        if(!(fieldType.compare("cocoon") == 0
-          || fieldType.compare("flash") == 0
-          )) {
-            std::cout << "Unsupported field type '" << fieldType << "'. Defaulting to cocoon." << std::endl;
-            fieldType = std::string("cocoon");
-        }
-
         if(fieldType.compare("cocoon") == 0) {
             CocoonField* cocoonField = new CocoonField();
             field = cocoonField;
@@ -179,6 +173,16 @@ FieldStructure* getFieldsInfo() {
             cocoonField->r_scale = fieldNode["radial_scale"].as<double>();
             cocoonField->z_scale = fieldNode["length_scale"].as<double>();
             cocoonField->B_strength = fieldNode["B_scale"].as<double>();
+        }
+
+        if(fieldType.compare("cylindrical") == 0) {
+            CylindricalField* cylindricalField = new CylindricalField();
+            field = cylindricalField;
+
+            cylindricalField->filename = fieldNode["filename"].as<std::string>();
+            cylindricalField->origin_z = fieldNode["origin_z"].as<double>();
+            cylindricalField->Bscale = fieldNode["B_scale"].as<double>();
+            cylindricalField->Escale = fieldNode["E_scale"].as<double>();
         }
 
         if(fieldType.compare("flash") == 0) {

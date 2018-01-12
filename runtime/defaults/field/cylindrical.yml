@@ -1,0 +1,10 @@
+---
+type: cylindrical
+filename: fields.h5
+origin_z: 0
+B_scale: 1
+E_scale: 1
+axis: [0, 0, 1]
+theta: 0
+phi: 0
+...
