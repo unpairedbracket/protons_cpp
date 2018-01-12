@@ -51,21 +51,24 @@ struct RKDPIntegrator : Integrator {
     static const double b4[];
     static const double b5[];
 
+    // err ~ O(h^5) so we take our step size down by (err/tol)^(1/5) if we're wrong
+    static constexpr double error_scale_power = 1.0/5.0;
+
     //// Adaptation params
     // How large a proportion of the velocity are we allowed to be wrong by?
-    double rtol = 1e-9;
-    // err ~ O(h^5) so we take our step size down by (err/tol)^(1/5) if we're wrong
-    double error_scale_power = 1.0/5.0;
+    double rtol;
     // How much are we allowed to increase step size by per non-failed step?
-    double maxLengthen = 1.1;
+    double maxLengthen;
     // How much are we allowed to decrease step size by on first failure?
-    double maxFirstShorten = 10;
+    double maxFirstShorten;
     // How much do we decrease step size by on subsequent failures?
-    double maxOtherShorten = 2;
+    double maxOtherShorten;
     // How short is a step allowed to be
-    double dt_min = 5E-18; // seconds
+    double dt_min; // seconds
+    // What to do with failed particles
+    bool kill_failed_particles;
     // Do we want to be loud about what's happening
-    bool verbose = false;
+    bool verbose;
 
     void (*accelFunc)(ParticleState*, FieldStructure*);
 

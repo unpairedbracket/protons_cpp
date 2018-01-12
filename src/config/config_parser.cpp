@@ -275,7 +275,15 @@ Integrator* getIntegratorInfo() {
         } else if (integratorType.compare("rk4") == 0 || integratorType.compare("RK4") == 0) {
             integrator = new RK4Integrator();
         } else if (integratorType.compare("RKDP") == 0) {
-            integrator = new RKDPIntegrator();
+            RKDPIntegrator* rkdp = new RKDPIntegrator();
+            integrator = rkdp;
+            rkdp->dt_min = integratorNode["dt_min"].as<double>();
+            rkdp->rtol = integratorNode["tol"].as<double>();
+            rkdp->maxLengthen = integratorNode["max_lengthen"].as<double>();
+            rkdp->maxFirstShorten = integratorNode["max_first_shorten"].as<double>();
+            rkdp->maxOtherShorten = integratorNode["max_shorten"].as<double>();
+            rkdp->kill_failed_particles = integratorNode["remove_failed_particles"].as<bool>();
+            rkdp->verbose = integratorNode["verbose"].as<bool>();
         }
 
         if(!integratorNode["relativistic"]) {

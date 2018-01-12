@@ -1,4 +1,21 @@
+# Dormand-Prince pair RK integrator
+# Adaptive timestep 4th/5th-order method
+# time_step: initial time step in seconds
+# dt_min: smallest allowable timestep in seconds
+# remove_failed_particles: if true,  particles which hit dt<dt_min
+#                                    are removed from the simulation
+#                          if false, particles continue with dt=dt_min
+
+# tol: step size is reduced until |error(v)| < tol * |v|
 ---
 type: RKDP
 time_step: 1E-10
+dt_min: 0
+remove_failed_particles: false
+verbose: false
+
+tol: 1e-9
+max_lengthen: 1.1
+max_shorten: 2
+max_first_shorten: 10
 ...

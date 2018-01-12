@@ -486,11 +486,18 @@ void RKDPIntegrator::step(ParticleState* state, FieldStructure* field) {
             }
                         
             lastIterationSuccess[j] = succ;
-
+            bool force;
             if(dt[j] < dt_min) {
-                state->running[j] = false;
-                numStopped++;
-            } else if(succ) {
+                if(this->kill_failed_particles) {
+                    state->running[j] = false;
+                    numStopped++;
+                } else {
+                    dt[j] = dt_min;
+                    force = true;
+                }
+            }
+            if(succ || force) {
+                
                 state->pos[j].x = state7->pos[j].x;
                 state->pos[j].y = state7->pos[j].y;
                 state->pos[j].z = state7->pos[j].z;
