@@ -21,12 +21,12 @@
 
 int main(int argc, char *argv[]) {
     load_config("configs/config.yml", "defaults/config.yml");
-    ParticleInfo* particleType = getParticleInfo();
+    ParticleInfo particleType = getParticleInfo();
 
     //Source
     ParticleSource* source = getSourceInfo();
 
-    ParticleState* state = source->genParticleState(particleType);
+    ParticleState* state = source->createParticleState(particleType);
 
     Interpolator* interp = getInterpolatorInfo();
     bool shouldInterpolate = interp;
@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
     //Detector
     ParticleDetector* detector = getDetectorInfo();
 
+    source->setParticleState(state);
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
         double distance = state->pos[j].z - field->min_z;

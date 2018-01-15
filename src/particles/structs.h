@@ -12,7 +12,7 @@ struct ParticleInfo {
 };
 
 struct ParticleState {
-    ParticleInfo *particleInfo;
+    ParticleInfo particleInfo;
     Vector3 *pos;
     Vector3 *vel;
     Vector3 *acc;
@@ -21,6 +21,5 @@ struct ParticleState {
     long N_running;
 };
 
-void initParticle(ParticleInfo* particle);
-void initParticleState(ParticleState* state, ParticleInfo* particleType, long N);
+void initParticleState(ParticleState* state, ParticleInfo particleType, long N);
 void shadowParticleState(ParticleState* state, ParticleState* other);

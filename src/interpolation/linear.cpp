@@ -32,10 +32,6 @@ void LinearInterpolator::setSampleValues(ParticleState* sampleValues) {
     delete[] this->sample_points;
 }
 
-void LinearInterpolator::initState(ParticleInfo* type) {
-    this->interpParticles = this->interpSource->genParticleState(type, this->interpParticles);
-}
-
 void LinearInterpolator::interpolate() {
     typedef CGAL::Data_access< std::map<Point, Coord_type, K::Less_xy_2> > Value_access;
     #pragma omp parallel for

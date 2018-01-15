@@ -52,7 +52,7 @@ void replace_with_file(YAML::Node node, std::string prop) {
     node[prop] = newnode;
 }
 
-ParticleInfo* getParticleInfo() {
+ParticleInfo getParticleInfo() {
     YAML::Node particleNode;
     double mass, charge;
     if(!config["particleType"]) {
@@ -96,9 +96,7 @@ ParticleInfo* getParticleInfo() {
         charge = particleNode["charge"].as<double>();
     }
 
-    ParticleInfo* particle = new ParticleInfo({mass, charge});
-    initParticle(particle);
-    return particle;
+    return {mass, charge, charge / mass};
 }
 
 ParticleSource* getSourceInfo() {

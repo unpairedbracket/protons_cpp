@@ -10,9 +10,9 @@ void accel(ParticleState* state, FieldStructure* fields) {
     for(long j = 0; j < state->N; j++) {
         if(state->running[j])
         {
-            state->acc[j].x = state->particleInfo->qmratio * ( fields->E[j].x + state->vel[j].y * fields->B[j].z - state->vel[j].z * fields->B[j].y );
-            state->acc[j].y = state->particleInfo->qmratio * ( fields->E[j].y + state->vel[j].z * fields->B[j].x - state->vel[j].x * fields->B[j].z );
-            state->acc[j].z = state->particleInfo->qmratio * ( fields->E[j].z + state->vel[j].x * fields->B[j].y - state->vel[j].y * fields->B[j].x );
+            state->acc[j].x = state->particleInfo.qmratio * ( fields->E[j].x + state->vel[j].y * fields->B[j].z - state->vel[j].z * fields->B[j].y );
+            state->acc[j].y = state->particleInfo.qmratio * ( fields->E[j].y + state->vel[j].z * fields->B[j].x - state->vel[j].x * fields->B[j].z );
+            state->acc[j].z = state->particleInfo.qmratio * ( fields->E[j].z + state->vel[j].x * fields->B[j].y - state->vel[j].y * fields->B[j].x );
         }
     }
 }

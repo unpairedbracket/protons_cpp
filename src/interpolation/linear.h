@@ -24,7 +24,7 @@ struct LinearInterpolator : Interpolator {
 
     void setSamplePoints(ParticleState* samplePoints) override;
     void setSampleValues(ParticleState* sampleValues) override;
-    void initState(ParticleInfo* type) override;
+
     void interpolate() override;
 };
 

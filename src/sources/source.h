@@ -8,7 +8,8 @@ struct ParticleSource {
     double distance;
     double divergence;
 
-    virtual ParticleState* genParticleState(ParticleInfo* particleType, ParticleState* existing = nullptr) = 0;
+    virtual ParticleState* createParticleState(ParticleInfo particleType) = 0;
+    virtual void setParticleState(ParticleState* state) = 0;
 };
 
 struct SquareSource : ParticleSource {
@@ -16,7 +17,8 @@ struct SquareSource : ParticleSource {
 
     long x_extent, y_extent;
 
-    ParticleState* genParticleState(ParticleInfo* particleType, ParticleState* existing = nullptr) override;
+    ParticleState* createParticleState(ParticleInfo particleType) override;
+    void setParticleState(ParticleState* state) override;
 };
 
 struct HelixSource : ParticleSource {
@@ -25,7 +27,8 @@ struct HelixSource : ParticleSource {
 
     long N;
 
-    ParticleState* genParticleState(ParticleInfo* particleType, ParticleState* existing = nullptr) override;
+    ParticleState* createParticleState(ParticleInfo particleType) override;
+    void setParticleState(ParticleState* state) override;
 };
 
 struct ScatterSource : ParticleSource {
@@ -37,7 +40,8 @@ struct ScatterSource : ParticleSource {
 
     long N;
 
-    ParticleState* genParticleState(ParticleInfo* particleType, ParticleState* existing = nullptr) override;
+    ParticleState* createParticleState(ParticleInfo particleType) override;
+    void setParticleState(ParticleState* state) override;
 };
 
 void initPosPointSource(ParticleState* particles, double distance);

@@ -9,9 +9,11 @@ struct Interpolator {
     ParticleSource* interpSource;
     ParticleState* interpParticles;
 
+    void initState(ParticleInfo type);
+
     virtual void setSamplePoints(ParticleState* samplePoints) = 0;
     virtual void setSampleValues(ParticleState* sampleValues) = 0;
-    virtual void initState(ParticleInfo* type) = 0;
+
     virtual void interpolate() = 0;
 };
 

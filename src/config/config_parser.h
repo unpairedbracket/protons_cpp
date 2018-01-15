@@ -21,7 +21,7 @@ void load_config(const std::string& filename, const std::string& defaults_filena
 void resolve_defaults(YAML::Node node);
 void replace_with_file(YAML::Node node, std::string prop);
 
-ParticleInfo* getParticleInfo();
+ParticleInfo getParticleInfo();
 ParticleSource* getSourceInfo();
 ParticleSource* getSourceInfo(YAML::Node sourceNode);
 FieldStructure* getFieldsInfo();
