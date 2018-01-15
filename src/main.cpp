@@ -39,7 +39,11 @@ int main(int argc, char *argv[]) {
     //Detector
     ParticleDetector* detector = getDetectorInfo();
 
+    Integrator* integrator = getIntegratorInfo();
+    integrator->initFromState(state);
     source->setParticleState(state);
+    integrator->reset();
+
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {
         double distance = state->pos[j].z - field->min_z;
@@ -56,8 +60,6 @@ int main(int argc, char *argv[]) {
     std::chrono::steady_clock::time_point begin;
     std::chrono::steady_clock::time_point end;
 
-    Integrator* integrator = getIntegratorInfo();
-    integrator->initFromState(state);
 
     double sumTimes = 0;
     double sumSqTimes = 0;

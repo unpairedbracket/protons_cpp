@@ -155,6 +155,9 @@ void RKDPIntegrator::initFromState(ParticleState* state) {
     shadowParticleState(state6, state);
     shadowParticleState(state7, state);
 
+}
+
+void RKDPIntegrator::reset() {
     #pragma omp parallel for
     for(long j = 0; j < this->N; j++) {
         this->dt[j] = dt_init;
@@ -162,7 +165,9 @@ void RKDPIntegrator::initFromState(ParticleState* state) {
 }
 
 void RKDPIntegrator::deinit() {
+    delete[] this->lastIterationSuccess;
     delete[] this->dt;
+    //TODO: delete everything contained within
 }
 
 void RKDPIntegrator::setInitTimestep(double dt_0) {

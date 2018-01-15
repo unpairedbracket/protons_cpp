@@ -7,11 +7,12 @@
 #include "../util/accel.h"
 
 struct Integrator {
-    virtual void deinit() = 0;
     virtual void setInitTimestep(double dt) = 0;
     virtual void setRelativistic(bool isRelativistic) = 0;
     virtual void initFromState(ParticleState* state) = 0;
     virtual void step(ParticleState* state, FieldStructure* field) = 0;
+    virtual void reset() {};
+    virtual void deinit() = 0;
 };
 
 struct EulerIntegrator : Integrator {
@@ -86,4 +87,5 @@ struct RKDPIntegrator : Integrator {
     void setRelativistic(bool isRelativistic) override;
     void initFromState(ParticleState* state) override;
     void step(ParticleState* state, FieldStructure* field) override;
+    void reset() override;
 };
