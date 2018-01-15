@@ -22,4 +22,5 @@ struct ParticleState {
 };
 
 void initParticleState(ParticleState* state, ParticleInfo particleType, long N);
+void setAllRunning(ParticleState* state);
 void shadowParticleState(ParticleState* state, ParticleState* other);

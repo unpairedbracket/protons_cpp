@@ -12,10 +12,12 @@ void initParticleState(ParticleState* state, ParticleInfo particleType, long N) 
 
     state->running = new bool[N];
 
-    memset(state->running, true, N*sizeof(bool));
-
     state->N = N;
-    state->N_running = N;
+}
+
+void setAllRunning(ParticleState* state) {
+    memset(state->running, true, state->N*sizeof(bool));
+    state->N_running = state->N;
 }
 
 void shadowParticleState(ParticleState* state, ParticleState* other) {
