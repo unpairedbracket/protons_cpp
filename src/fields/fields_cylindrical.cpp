@@ -116,13 +116,13 @@ void CylindricalField::getFields(ParticleState* state) {
                         eler_pz = eler[index(0, 0)] * (2*del_r - 1);
                         elez_pz = elez[index(0, 0)] * (2*del_r - 1);
                     } else if(idr_m + 1 > this->nb[0] - 1) {
-                        magphi_pz = magphi[index(idr_m, 0)] * (1-del_r);
-                        eler_pz = eler[index(idr_m, 0)] * (1-del_r);
-                        elez_pz = elez[index(idr_m, 0)] * (1-del_r);
+                        magphi_pz = magphi[index(idr_m, 0)] * idel_r;
+                        eler_pz = eler[index(idr_m, 0)] * idel_r;
+                        elez_pz = elez[index(idr_m, 0)] * idel_r;
                     } else {
-                        magphi_pz = magphi[index(idr_m, 0)] * (1-del_r) + magphi[index(idr_m+1, 0)] * del_r;
-                        eler_pz = eler[index(idr_m, 0)] * (1-del_r) + eler[index(idr_m+1, 0)] * del_r;
-                        elez_pz = elez[index(idr_m, 0)] * (1-del_r) + elez[index(idr_m+1, 0)] * del_r;
+                        magphi_pz = magphi[index(idr_m, 0)] * idel_r + magphi[index(idr_m+1, 0)] * del_r;
+                        eler_pz = eler[index(idr_m, 0)] * idel_r + eler[index(idr_m+1, 0)] * del_r;
+                        elez_pz = elez[index(idr_m, 0)] * idel_r + elez[index(idr_m+1, 0)] * del_r;
                     }
                 } else if(idz_m + 1 > this->nb[1] - 1) {
                     magphi_pz = 0;
@@ -133,13 +133,13 @@ void CylindricalField::getFields(ParticleState* state) {
                         eler_mz = eler[index(0, this->nb[1]-1)] * (2*del_r - 1);
                         elez_mz = elez[index(0, this->nb[1]-1)] * (2*del_r - 1);
                     } else if(idr_m + 1 > this->nb[0] - 1) {
-                        magphi_mz = magphi[index(idr_m, this->nb[1]-1)] * (1-del_r);
-                        eler_mz = eler[index(idr_m, this->nb[1]-1)] * (1-del_r);
-                        elez_mz = elez[index(idr_m, this->nb[1]-1)] * (1-del_r);
+                        magphi_mz = magphi[index(idr_m, this->nb[1]-1)] * idel_r;
+                        eler_mz = eler[index(idr_m, this->nb[1]-1)] * idel_r;
+                        elez_mz = elez[index(idr_m, this->nb[1]-1)] * idel_r;
                     } else {
-                        magphi_mz = magphi[index(idr_m, this->nb[1]-1)] * (1-del_r) + magphi[index(idr_m+1, this->nb[1]-1)] * del_r;
-                        eler_mz = eler[index(idr_m, this->nb[1]-1)] * (1-del_r) + eler[index(idr_m+1, this->nb[1]-1)] * del_r;
-                        elez_mz = elez[index(idr_m, this->nb[1]-1)] * (1-del_r) + elez[index(idr_m+1, this->nb[1]-1)] * del_r;
+                        magphi_mz = magphi[index(idr_m, this->nb[1]-1)] * idel_r + magphi[index(idr_m+1, this->nb[1]-1)] * del_r;
+                        eler_mz = eler[index(idr_m, this->nb[1]-1)] * idel_r + eler[index(idr_m+1, this->nb[1]-1)] * del_r;
+                        elez_mz = elez[index(idr_m, this->nb[1]-1)] * idel_r + elez[index(idr_m+1, this->nb[1]-1)] * del_r;
                     }
                 } else {
                     if(idr_m < 0) {
@@ -150,19 +150,19 @@ void CylindricalField::getFields(ParticleState* state) {
                         elez_mz = elez[index(0, idz_m  )] * (2*del_r - 1);
                         elez_pz = elez[index(0, idz_m+1)] * (2*del_r - 1);
                     } else if(idr_m + 1 > this->nb[0] - 1) {
-                        magphi_mz = magphi[index(idr_m, idz_m  )] * (1-del_r);
-                        magphi_pz = magphi[index(idr_m, idz_m+1)] * (1-del_r);
-                        eler_mz = eler[index(idr_m, idz_m  )] * (1-del_r);
-                        eler_pz = eler[index(idr_m, idz_m+1)] * (1-del_r);
-                        elez_mz = elez[index(idr_m, idz_m  )] * (1-del_r);
-                        elez_pz = elez[index(idr_m, idz_m+1)] * (1-del_r);
+                        magphi_mz = magphi[index(idr_m, idz_m  )] * idel_r;
+                        magphi_pz = magphi[index(idr_m, idz_m+1)] * idel_r;
+                        eler_mz = eler[index(idr_m, idz_m  )] * idel_r;
+                        eler_pz = eler[index(idr_m, idz_m+1)] * idel_r;
+                        elez_mz = elez[index(idr_m, idz_m  )] * idel_r;
+                        elez_pz = elez[index(idr_m, idz_m+1)] * idel_r;
                     } else {
-                        magphi_mz = magphi[index(idr_m, idz_m  )] * (1-del_r) + magphi[index(idr_m+1, idz_m  )] * del_r;
-                        magphi_pz = magphi[index(idr_m, idz_m+1)] * (1-del_r) + magphi[index(idr_m+1, idz_m+1)] * del_r;
-                        eler_mz = eler[index(idr_m, idz_m  )] * (1-del_r) + eler[index(idr_m+1, idz_m  )] * del_r;
-                        eler_pz = eler[index(idr_m, idz_m+1)] * (1-del_r) + eler[index(idr_m+1, idz_m+1)] * del_r;
-                        elez_mz = elez[index(idr_m, idz_m  )] * (1-del_r) + elez[index(idr_m+1, idz_m  )] * del_r;
-                        elez_pz = elez[index(idr_m, idz_m+1)] * (1-del_r) + elez[index(idr_m+1, idz_m+1)] * del_r;
+                        magphi_mz = magphi[index(idr_m, idz_m  )] * idel_r + magphi[index(idr_m+1, idz_m  )] * del_r;
+                        magphi_pz = magphi[index(idr_m, idz_m+1)] * idel_r + magphi[index(idr_m+1, idz_m+1)] * del_r;
+                        eler_mz = eler[index(idr_m, idz_m  )] * idel_r + eler[index(idr_m+1, idz_m  )] * del_r;
+                        eler_pz = eler[index(idr_m, idz_m+1)] * idel_r + eler[index(idr_m+1, idz_m+1)] * del_r;
+                        elez_mz = elez[index(idr_m, idz_m  )] * idel_r + elez[index(idr_m+1, idz_m  )] * del_r;
+                        elez_pz = elez[index(idr_m, idz_m+1)] * idel_r + elez[index(idr_m+1, idz_m+1)] * del_r;
                     }
                 }
 
