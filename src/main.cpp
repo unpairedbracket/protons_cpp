@@ -41,7 +41,21 @@ int main(int argc, char *argv[]) {
 
     Integrator* integrator = getIntegratorInfo();
     integrator->initFromState(state);
+
+    #ifdef USE_GL
+        openWindow("shaders/shader.vert", "shaders/shader.frag");
+        setupMatrix(source, field, detector);
+        setupBuffers(&state->pos[0].x, state->running, state->N);
+        updateBuffers(&state->pos[0].x, state->running, state->N);
+        draw(state->N, 0, nullptr);
+        printf("Window opened\n");
+    #endif
+
+    int full_iterations = 100000;
+
+    for(int iteration = 0; iteration<full_iterations; iteration++) {
     source->setParticleState(state);
+    setAllRunning(state);
     integrator->reset();
 
     #pragma omp parallel for
@@ -66,16 +80,7 @@ int main(int argc, char *argv[]) {
 
     field->orientBeam(state);
 
-    #ifdef USE_GL
-        openWindow("shaders/shader.vert", "shaders/shader.frag");
-        setupMatrix(source, field, detector);
-        setupBuffers(&state->pos[0].x, state->running, state->N);
-        updateBuffers(&state->pos[0].x, state->running, state->N);
-        draw(state->N, 0, nullptr);
-        printf("Window opened\n");
-    #endif
-
-    long i;
+    long i = 0;
 
     for(i = 0; i < steps && state->N_running > 0; i++) {
         begin = std::chrono::steady_clock::now();
@@ -102,28 +107,25 @@ int main(int argc, char *argv[]) {
 
     field->deorientBeam(state);
 
-    if(shouldInterpolate)
-        interp->setSampleValues(state);
 
     if(!shouldInterpolate) {
         detector->finalPush(state);
-
         #ifdef USE_GL
             field->orientBeam(state);
             char name[11] = "output.png";
             updateBuffers(&state->pos[0].x, state->running, state->N);
-            draw(state->N, 10, name, true);
+            draw(state->N, 10, name, false);
             field->deorientBeam(state);
         #endif
         detector->detect(state);
-        detector->output();
     } else {
         begin = std::chrono::steady_clock::now();
+        interp->setSampleValues(state);
         for(int i = 0; i < interp->iterations; i++) {
             printf("Initialising particles for iteration %d... ", i);
             interp->initState(particleType);
-            printf(" DONE\n");
-            printf("Interpolating %ld particles...", interp->interpParticles->N);
+            if(i==69) {printf("NICE\n");} else {printf("DONE\n");}
+            printf("Interpolating %ld particles... ", interp->interpParticles->N);
             interp->interpolate();
             printf("DONE\n");
             detector->finalPush(interp->interpParticles);
@@ -137,11 +139,13 @@ int main(int argc, char *argv[]) {
             #endif
             detector->detect(interp->interpParticles);
         }
-        detector->output();
         end = std::chrono::steady_clock::now();
         double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
         printf("Interpolation took %f microsec per particle\n", nanoTaken/(1000.0 * interp->iterations * interp->interpParticles->N));
     }
+    }
+
+    detector->output();
 
     integrator->deinit();
     return 0;
