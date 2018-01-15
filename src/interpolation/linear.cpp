@@ -26,7 +26,6 @@ void LinearInterpolator::setSampleValues(ParticleState* sampleValues) {
         vel_x_values.insert(std::make_pair(this->sample_points[j], sampleValues->vel[j].x));
         vel_y_values.insert(std::make_pair(this->sample_points[j], sampleValues->vel[j].y));
         vel_z_values.insert(std::make_pair(this->sample_points[j], sampleValues->vel[j].z));
-        //std::cout << "[" << this->sample_points[j] << "] -> [" << sampleValues->pos[j].x << ", " << sampleValues->pos[j].y << ", " << sampleValues->pos[j].z << "], [" << sampleValues->vel[j].x << ", " << sampleValues->vel[j].y << ", " << sampleValues->vel[j].z << "]" << std::endl;
     }
 
     delete[] this->sample_points;
@@ -37,7 +36,6 @@ void LinearInterpolator::interpolate() {
     #pragma omp parallel for
     for(long j = 0; j < this->interpParticles->N; j++) {
         Point p(this->interpParticles->vel[j].x, this->interpParticles->vel[j].y);
-        //std::cout << std::endl << "Point: " << p << " -> ";
 
         std::vector< std::pair<Point, Coord_type> > coords;
         Face f = this->tri.inexact_locate(p);
@@ -55,22 +53,13 @@ void LinearInterpolator::interpolate() {
             coords.push_back(std::make_pair(t[2], baryCoords[2]));
             Coord_type norm = baryCoords[0] + baryCoords[1] + baryCoords[2];
 
-            //std::cout << "Norm: " << norm << std::endl << "Coords: ";
-            //for(auto c : coords) {
-                //std::cout << c.first << ", " << c.second << "; ";
-            //}
-            //std::cout << std::endl;
             Coord_type pos_x = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(pos_x_values));
             Coord_type pos_y = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(pos_y_values));
             Coord_type pos_z = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(pos_z_values));
 
-            //std::cout << "[" << pos_x << ", " << pos_y << ", " << pos_z << "], ";
-
             Coord_type vel_x = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(vel_x_values));
             Coord_type vel_y = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(vel_y_values));
             Coord_type vel_z = CGAL::linear_interpolation(coords.begin(), coords.end(), norm, Value_access(vel_z_values));
-
-            //std::cout << "[" << vel_x << ", " << vel_y << ", " << vel_z << "]";
 
             this->interpParticles->pos[j] = {pos_x, pos_y, pos_z};
             this->interpParticles->vel[j] = {vel_x, vel_y, vel_z};
