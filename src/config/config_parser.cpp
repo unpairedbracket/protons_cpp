@@ -76,6 +76,9 @@ ParticleInfo getParticleInfo() {
         } else if(name.compare("electron") == 0) {
             mass = m_e;
             charge = - e;
+        } else if(name.compare("positron") == 0) {
+            mass = m_e;
+            charge = + e;
         } else {
             std::cout << "Particle " << name << " not implemented. Using protons as default." << std::endl;
             mass = m_p;
