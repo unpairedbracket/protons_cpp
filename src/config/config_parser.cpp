@@ -323,14 +323,15 @@ Interpolator* getInterpolatorInfo() {
 
         if (interpolatorType.compare("linear") == 0) {
             interpolator = new LinearInterpolator();
-
-            replace_with_file(interpolatorNode, "source");
-            interpolator->interpSource = getSourceInfo(interpolatorNode["source"]);
-            interpolator->iterations = interpolatorNode["iterations"].as<int>();
         } else if (interpolatorType.compare("natural_neighbor") == 0) {
             interpolator = new NaturalInterpolator();
+        }
 
+        if(interpolator) {
             replace_with_file(interpolatorNode, "source");
+            interpolatorNode["source"]["energy"] = config["source"]["energy"];
+            interpolatorNode["source"]["divergence"] = config["source"]["divergence"];
+
             interpolator->interpSource = getSourceInfo(interpolatorNode["source"]);
             interpolator->iterations = interpolatorNode["iterations"].as<int>();
         }
