@@ -218,9 +218,7 @@ ParticleDetector* getDetectorInfo() {
 
     std::string detectorType = detectorNode["type"].as<std::string>();
 
-    if(detectorType.compare("none") == 0) {
-        detector = new DetectorNoop();
-    } else if(detectorType.compare("text") == 0) {
+    if(detectorType.compare("text") == 0) {
         detector = new DetectorTextFile();
     } else if(detectorType.compare("hdf5") == 0) {
         detector = new DetectorHDF5();

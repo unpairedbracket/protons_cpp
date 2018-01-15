@@ -12,11 +12,6 @@ struct ParticleDetector {
     virtual void output() = 0;
 };
 
-struct DetectorNoop : ParticleDetector {
-    void detect(ParticleState* state) override {};
-    void output() override {};
-};
-
 struct DetectorTextFile : ParticleDetector {
     ParticleState* state;
     void detect(ParticleState* state) override;

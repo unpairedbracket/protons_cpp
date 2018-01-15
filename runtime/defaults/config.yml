@@ -7,7 +7,7 @@ source: helix
 
 field: cocoon
 
-detector: none
+detector: fluence
     
 integrator: RK4
 
