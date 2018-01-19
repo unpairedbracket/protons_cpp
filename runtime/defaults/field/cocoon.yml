@@ -1,7 +1,7 @@
 ---
 type: cocoon
-length_scale: 0.001
-radial_scale: 0.0005
+length_scale: 0.0001
+radial_scale: 0.00005
 B_scale: 25
 axis: [0, 0, 1]
 theta: 0
