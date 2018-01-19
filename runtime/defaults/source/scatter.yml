@@ -2,6 +2,7 @@
 type: scatter
 distance: 0.02
 divergence: 0.05
-energy: 6.40871e-12
+energy: 40
+ener_unit: MeV
 N: 10000
 ...

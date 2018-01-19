@@ -7,14 +7,13 @@
 struct ParticleSource {
     double distance;
     double divergence;
+    double energy;
 
     virtual ParticleState* createParticleState(ParticleInfo particleType) = 0;
     virtual void setParticleState(ParticleState* state) = 0;
 };
 
 struct SquareSource : ParticleSource {
-    double energy;
-
     long x_extent, y_extent;
 
     ParticleState* createParticleState(ParticleInfo particleType) override;
@@ -22,7 +21,6 @@ struct SquareSource : ParticleSource {
 };
 
 struct HelixSource : ParticleSource {
-    double energy;
     double dphi;
 
     long N;
@@ -35,8 +33,6 @@ struct ScatterSource : ParticleSource {
     std::uniform_real_distribution<double> zrand;
     std::uniform_real_distribution<double> phirand;
     std::default_random_engine re;
-
-    double energy;
 
     long N;
 

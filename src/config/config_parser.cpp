@@ -118,9 +118,6 @@ ParticleSource* getSourceInfo(YAML::Node sourceNode) {
 
             squareSource->x_extent = sourceNode["N"][0].as<long>();
             squareSource->y_extent = sourceNode["N"][1].as<long>();
-            squareSource->distance = sourceNode["distance"].as<double>();
-            squareSource->divergence = sourceNode["divergence"].as<double>();
-            squareSource->energy = sourceNode["energy"].as<double>();
         }
         if(sourceType.compare("helix") == 0) {
             if(!sourceNode["pitch"]) {
@@ -132,9 +129,6 @@ ParticleSource* getSourceInfo(YAML::Node sourceNode) {
             source = helixSource;
 
             helixSource->N = sourceNode["N"].as<long>();
-            helixSource->distance = sourceNode["distance"].as<double>();
-            helixSource->divergence = sourceNode["divergence"].as<double>();
-            helixSource->energy = sourceNode["energy"].as<double>();
             helixSource->dphi = sourceNode["pitch"].as<double>();
         }
         if(sourceType.compare("scatter") == 0) {
@@ -142,12 +136,20 @@ ParticleSource* getSourceInfo(YAML::Node sourceNode) {
             source = scatterSource;
 
             scatterSource->N = sourceNode["N"].as<long>();
-            scatterSource->distance = sourceNode["distance"].as<double>();
-            scatterSource->divergence = sourceNode["divergence"].as<double>();
-            scatterSource->energy = sourceNode["energy"].as<double>();
             scatterSource->phirand = std::uniform_real_distribution<double>(-pi(), pi());
-            scatterSource->zrand   = std::uniform_real_distribution<double>(cos(scatterSource->divergence), 1);
+            double div = sourceNode["divergence"].as<double>();
+            scatterSource->zrand   = std::uniform_real_distribution<double>(cos(div), 1);
         }
+        source->distance = sourceNode["distance"].as<double>();
+        source->energy = sourceNode["energy"].as<double>();
+        source->divergence = sourceNode["divergence"].as<double>();
+        std::string unit = sourceNode["ener_unit"].as<std::string>();
+        if(unit.compare("MeV") == 0) {
+            source->energy *= MeV;
+        } else if(unit.compare("J") != 0) {
+            std::cout << "Unknown Unit Specified! Known units are J and MeV, got " << unit << std::endl;
+        }
+
     }
 
     return source;
