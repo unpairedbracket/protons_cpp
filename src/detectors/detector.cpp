@@ -20,6 +20,11 @@ void ParticleDetector::finalPush(ParticleState* state) {
     }
 }
 
+void DetectorTextFile::detectUndeviated(ParticleState* state) {
+    //This will be overridden by detect() but I don't care about that at this point
+    this->state = state;
+}
+
 void DetectorTextFile::detect(ParticleState* state) {
     this->state = state;
 }
@@ -31,13 +36,18 @@ void DetectorTextFile::output() {
         posfile << state->pos[i].x << "," << state->pos[i].y << "," << state->pos[i].z << std::endl;
     }
     posfile.close();
-    
+
     std::ofstream velfile;
     velfile.open("vel.txt");
     for(long i = 0; i < state->N; i++) {
         velfile << state->vel[i].x << "," << state->vel[i].y << "," << state->vel[i].z << std::endl;
     }
     velfile.close();
+}
+
+void DetectorHDF5::detectUndeviated(ParticleState* state) {
+    //This will be overridden by detect() but I don't care about that at this point
+    this->state = state;
 }
 
 void DetectorHDF5::detect(ParticleState* state) {
@@ -91,6 +101,24 @@ void DetectorFluence::detect(ParticleState* state) {
     }
 }
 
+void DetectorFluence::detectUndeviated(ParticleState* state) {
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        double d = this->distance - state->pos[j].z;
+        double x = state->pos[j].x + d * state->vel[j].x / state->vel[j].z;
+        double y = state->pos[j].y + d * state->vel[j].y / state->vel[j].z;
+        double xfrac = x / this->detectorSize[0] + 0.5;
+        double yfrac = y / this->detectorSize[1] + 0.5;
+        if(xfrac >= 0 && xfrac <= 1 && yfrac >= 0 && yfrac <= 1) {
+            int xcell = floor(this->detectorPixels[0] * xfrac);
+            int ycell = floor(this->detectorPixels[1] * yfrac);
+            int idx = ycell * this->detectorPixels[0] + xcell;
+            #pragma omp atomic
+            nullDetectorArray[idx]++;
+        }
+    }
+}
+
 void DetectorFluence::output() {
     using namespace H5;
     try {
@@ -103,18 +131,19 @@ void DetectorFluence::output() {
         dims[1] = this->detectorPixels[0];
         DataSpace dataspace(2, dims);
 
-        // Create the dataset.      
-        DataSet dataset_fluence = file.createDataSet("fluence",  PredType::IEEE_F64BE, dataspace);
+        // Create the dataset.
+        DataSet dataset = file.createDataSet("fluence",  PredType::IEEE_F64BE, dataspace);
+        dataset.write(this->detectorArray, PredType::NATIVE_DOUBLE);
+        dataset.close();
 
-        // Write the data to the dataset using default memory space, file
-        // space, and transfer properties.
-        dataset_fluence.write(this->detectorArray, PredType::NATIVE_DOUBLE);
+        dataset = file.createDataSet("fluence_0",  PredType::IEEE_F64BE, dataspace);
+        dataset.write(this->nullDetectorArray, PredType::NATIVE_DOUBLE);
 
         dataspace.close();
-        dataset_fluence.close();
+        dataset.close();
         file.close();
     } catch(FileIException error) {
-    	error.printError();
+        error.printError();
     } catch(DataSetIException error) {
         error.printError();
     }

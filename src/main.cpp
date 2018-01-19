@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
     source->setParticleState(state);
     setAllRunning(state);
     integrator->reset();
+    detector->detectUndeviated(state);
 
     #pragma omp parallel for
     for(long j = 0; j < state->N; j++) {

@@ -231,6 +231,7 @@ ParticleDetector* getDetectorInfo() {
         fluence->detectorSize[0] = detectorNode["size"][0].as<double>();
         fluence->detectorSize[1] = detectorNode["size"][1].as<double>();
         fluence->detectorArray = new double[fluence->detectorPixels[0]*fluence->detectorPixels[1]];
+        fluence->nullDetectorArray = new double[fluence->detectorPixels[0]*fluence->detectorPixels[1]];
         detector = fluence;
     }
 
