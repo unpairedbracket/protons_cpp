@@ -91,7 +91,7 @@ void CylindricalField::getFields(ParticleState* state) {
                 int idz_m = floor(fracz-0.5);
 
                 double del_r = (fracr-0.5) - idr_m;
-                double del_z = (fracz-0.5) - idr_m;
+                double del_z = (fracz-0.5) - idz_m;
                 double idel_r = 1-del_r;
                 double idel_z = 1-del_z;
 
