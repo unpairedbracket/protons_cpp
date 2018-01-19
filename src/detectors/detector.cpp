@@ -6,6 +6,8 @@
 
 #include <H5Cpp.h>
 
+#include "../reconstruction/invert.h"
+
 void ParticleDetector::init(ParticleInfo* particle, double distance) {
     this->particleInfo = particle;
     this->distance = distance;
@@ -80,7 +82,7 @@ void DetectorHDF5::output() {
         dataset_vel.close();
         file.close();
     } catch(FileIException error) {
-    	error.printError();
+        error.printError();
     } catch(DataSetIException error) {
         error.printError();
     }
@@ -119,6 +121,32 @@ void DetectorFluence::detectUndeviated(ParticleState* state) {
     }
 }
 
+void DetectorFluence::performInversion(double expectedFluencePerArea) {
+    if(!shouldInvert) {
+        return;
+    }
+    double* adjustedFluences = new double[this->detectorPixels[0] * this->detectorPixels[1]];
+    potentialArray = new double[this->detectorPixels[0] * this->detectorPixels[1]];
+    X_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
+    Y_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
+    
+    XX_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
+    YY_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
+    XY_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
+
+    double pixel_area = (this->detectorSize[0]*this->detectorSize[1]) / (this->detectorPixels[0]*this->detectorPixels[1]);
+    double expectedFluence = expectedFluencePerArea * pixel_area;
+    printf("Expected Fluence: %e, Pixel Area: %e\n", expectedFluencePerArea, pixel_area);
+    printf("Expected Pixel Bin Count: %e\n", expectedFluence);
+
+    for(int i = 0; i < this->detectorPixels[0] * this->detectorPixels[1]; i++) {
+        // Fluence that's actually zero will blow up to -inf in the logarithm - avoid
+        adjustedFluences[i] = std::max(expectedFluence / 1000, this->detectorArray[i] - this->nullDetectorArray[i] + expectedFluence);
+    }
+
+    invert_fluences(adjustedFluences, expectedFluence, this->detectorPixels, this->detectorSize, 1e-11, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
+}
+
 void DetectorFluence::output() {
     using namespace H5;
     try {
@@ -138,6 +166,24 @@ void DetectorFluence::output() {
 
         dataset = file.createDataSet("fluence_0",  PredType::IEEE_F64BE, dataspace);
         dataset.write(this->nullDetectorArray, PredType::NATIVE_DOUBLE);
+
+        dataset = file.createDataSet("potential",  PredType::IEEE_F64BE, dataspace);
+        dataset.write(this->potentialArray, PredType::NATIVE_DOUBLE);
+
+        dataset = file.createDataSet("X",  PredType::IEEE_F64BE, dataspace);
+        dataset.write(this->X_Array, PredType::NATIVE_DOUBLE);
+
+        dataset = file.createDataSet("Y",  PredType::IEEE_F64BE, dataspace);
+        dataset.write(this->Y_Array, PredType::NATIVE_DOUBLE);
+
+        dataset = file.createDataSet("XX",  PredType::IEEE_F64BE, dataspace);
+        dataset.write(this->XX_Array, PredType::NATIVE_DOUBLE);
+
+        dataset = file.createDataSet("XY",  PredType::IEEE_F64BE, dataspace);
+        dataset.write(this->XY_Array, PredType::NATIVE_DOUBLE);
+
+        dataset = file.createDataSet("YY",  PredType::IEEE_F64BE, dataspace);
+        dataset.write(this->YY_Array, PredType::NATIVE_DOUBLE);
 
         dataspace.close();
         dataset.close();

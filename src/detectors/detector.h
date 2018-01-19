@@ -10,6 +10,7 @@ struct ParticleDetector {
     void finalPush(ParticleState* state);
     virtual void detectUndeviated(ParticleState* state) = 0;
     virtual void detect(ParticleState* state) = 0;
+    virtual void performInversion(double expected) {};
     virtual void output() = 0;
 };
 
@@ -33,7 +34,17 @@ struct DetectorFluence : ParticleDetector {
     double* detectorArray;
     double* nullDetectorArray;
 
+    double* potentialArray;
+    double* X_Array;
+    double* Y_Array;
+    double* XX_Array;
+    double* XY_Array;
+    double* YY_Array;
+
+    bool shouldInvert = true;
+
     void detectUndeviated(ParticleState* state) override;
     void detect(ParticleState* state) override;
+    void performInversion(double expected) override;
     void output() override;
 };

@@ -146,6 +146,8 @@ int main(int argc, char *argv[]) {
     }
     }
 
+    detector->performInversion(full_iterations * state->N /( 2*pi() * (1 - cos(source->divergence)) * (source->distance + detector->distance) * (source->distance + detector->distance)));
+
     detector->output();
 
     integrator->deinit();

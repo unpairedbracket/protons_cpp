@@ -21,6 +21,7 @@ include_directories(/usr/lib/x86_64-linux-gnu/hdf5/serial/include)
 link_directories(/usr/lib/x86_64-linux-gnu/hdf5/serial/lib)
 
 file(GLOB GRAPHICS_SOURCES "graphics/*.cpp")
+file(GLOB RECONSTRUCT_SOURCES "reconstruction/*.cpp")
 file(GLOB PRIMARY_SOURCES "config/*.cpp" "detectors/*.cpp" "fields/*.cpp" "integrators/*.cpp" "interpolation/*.cpp" "particles/*.cpp" "sources/*.cpp" "util/*.cpp")
 
 add_library(Code ${PRIMARY_SOURCES})
@@ -30,13 +31,17 @@ target_link_libraries(Code libhdf5_hl_cpp.so libhdf5_hl.so libhdf5_cpp.so libhdf
 add_library(Graphics ${GRAPHICS_SOURCES})
 target_link_libraries(Graphics -lGL -lX11 -lGLU -lGLEW -lglfw -lpng)
 
+add_library(Reconstruction ${RECONSTRUCT_SOURCES})
+
 add_executable(protons main.cpp)
 target_compile_definitions(protons PUBLIC USE_GL)
 target_link_libraries(protons Code)
 target_link_libraries(protons Graphics)
+target_link_libraries(protons Reconstruction)
 
 add_executable(protons-headless main.cpp)
 
 target_link_libraries(protons-headless Code)
+target_link_libraries(protons-headless Reconstruction)
 
 install(TARGETS protons protons-headless DESTINATION bin)
