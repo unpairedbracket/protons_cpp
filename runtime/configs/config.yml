@@ -2,34 +2,41 @@
 particleType: proton
 
 source: #in
-    type: helix
+    type: scatter
     distance: 0.02
-    divergence: 0.05
+    divergence: 0.01
     energy: 40
     N: 10000
 
 field: #in
-    type: flash
+    type: cocoon
+    filename: fields/flash/lasslab_hdf5_plt_cnt_0300
+    origin_z: 0.1050e-3
+    B_scale: -10
+    E_scale: 0
+    origin: [0, 0.05, 0]
+    axis: [0, 0, 1]
+    theta: 0
 
 detector:
-    type: hdf5
+    type: fluence
     distance: 1
-    
+    pixels: [200, 200]
+    size: [0.0204, 0.0204]
+
 integrator: #in
     type: RKDP
-    time_step: 1.14e-12
+    time_step: 1.14e-15
+    dt_min: 5e-16
+    tol: 1e-3
 
-middleware: #not implemented
-    -
-        type: opengl
-        vsync: false
-        window_size: [1000, 1000]
-        antialiasing: false
-        background: [0, 0, 0]
-        shader: [shaders/shader.vert, shaders/shader.frag]
-    -
-        type: logger
-        log: iteration
-    -
-        type: profiler
+interpolation:
+    type: none
+    source:
+        type: scatter
+        distance: 0.02
+        divergence: 0.01
+        energy: 40
+        N: 100000
+    iterations: 1
 ...
