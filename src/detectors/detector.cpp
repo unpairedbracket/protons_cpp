@@ -135,16 +135,14 @@ void DetectorFluence::performInversion(double expectedFluencePerArea) {
     XY_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
 
     double pixel_area = (this->detectorSize[0]*this->detectorSize[1]) / (this->detectorPixels[0]*this->detectorPixels[1]);
-    double expectedFluence = expectedFluencePerArea * pixel_area;
-    printf("Expected Fluence: %e, Pixel Area: %e\n", expectedFluencePerArea, pixel_area);
-    printf("Expected Pixel Bin Count: %e\n", expectedFluence);
+    this->fl_expected = expectedFluencePerArea * pixel_area;
 
     for(int i = 0; i < this->detectorPixels[0] * this->detectorPixels[1]; i++) {
         // Fluence that's actually zero will blow up to -inf in the logarithm - avoid
-        adjustedFluences[i] = std::max(expectedFluence / 1000, this->detectorArray[i] - this->nullDetectorArray[i] + expectedFluence);
+        adjustedFluences[i] = std::max(this->fl_expected / 1000, this->detectorArray[i] - this->nullDetectorArray[i] + this->fl_expected);
     }
 
-    invert_fluences(adjustedFluences, expectedFluence, this->detectorPixels, this->detectorSize, 1e-11, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
+    invert_fluences(adjustedFluences, this->fl_expected, this->detectorPixels, this->detectorSize, 1e-11, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
 }
 
 void DetectorFluence::output() {
@@ -154,9 +152,7 @@ void DetectorFluence::output() {
 
         H5File file("fluence.h5", H5F_ACC_TRUNC);
 
-        hsize_t dims[2];               // dataset dimensions
-        dims[0] = this->detectorPixels[1];
-        dims[1] = this->detectorPixels[0];
+        hsize_t dims[2] = { this->detectorPixels[1], this->detectorPixels[0] };
         DataSpace dataspace(2, dims);
 
         // Create the dataset.
@@ -167,23 +163,29 @@ void DetectorFluence::output() {
         dataset = file.createDataSet("fluence_0",  PredType::IEEE_F64BE, dataspace);
         dataset.write(this->nullDetectorArray, PredType::NATIVE_DOUBLE);
 
-        dataset = file.createDataSet("potential",  PredType::IEEE_F64BE, dataspace);
-        dataset.write(this->potentialArray, PredType::NATIVE_DOUBLE);
+        if(shouldInvert) {
+            dataset = file.createDataSet("potential",  PredType::IEEE_F64BE, dataspace);
+            dataset.write(this->potentialArray, PredType::NATIVE_DOUBLE);
 
-        dataset = file.createDataSet("X",  PredType::IEEE_F64BE, dataspace);
-        dataset.write(this->X_Array, PredType::NATIVE_DOUBLE);
+            dataset = file.createDataSet("X",  PredType::IEEE_F64BE, dataspace);
+            dataset.write(this->X_Array, PredType::NATIVE_DOUBLE);
 
-        dataset = file.createDataSet("Y",  PredType::IEEE_F64BE, dataspace);
-        dataset.write(this->Y_Array, PredType::NATIVE_DOUBLE);
+            dataset = file.createDataSet("Y",  PredType::IEEE_F64BE, dataspace);
+            dataset.write(this->Y_Array, PredType::NATIVE_DOUBLE);
 
-        dataset = file.createDataSet("XX",  PredType::IEEE_F64BE, dataspace);
-        dataset.write(this->XX_Array, PredType::NATIVE_DOUBLE);
+            dataset = file.createDataSet("XX",  PredType::IEEE_F64BE, dataspace);
+            dataset.write(this->XX_Array, PredType::NATIVE_DOUBLE);
 
-        dataset = file.createDataSet("XY",  PredType::IEEE_F64BE, dataspace);
-        dataset.write(this->XY_Array, PredType::NATIVE_DOUBLE);
+            dataset = file.createDataSet("XY",  PredType::IEEE_F64BE, dataspace);
+            dataset.write(this->XY_Array, PredType::NATIVE_DOUBLE);
 
-        dataset = file.createDataSet("YY",  PredType::IEEE_F64BE, dataspace);
-        dataset.write(this->YY_Array, PredType::NATIVE_DOUBLE);
+            dataset = file.createDataSet("YY",  PredType::IEEE_F64BE, dataspace);
+            dataset.write(this->YY_Array, PredType::NATIVE_DOUBLE);
+
+            hsize_t d[1] = {1};
+            dataset = file.createDataSet("fluence_expected", PredType::IEEE_F64BE, DataSpace(1, d));
+            dataset.write(&this->fl_expected, PredType::NATIVE_DOUBLE);
+        }
 
         dataspace.close();
         dataset.close();

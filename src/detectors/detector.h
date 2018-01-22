@@ -41,6 +41,8 @@ struct DetectorFluence : ParticleDetector {
     double* XY_Array;
     double* YY_Array;
 
+    double fl_expected;
+
     bool shouldInvert = true;
 
     void detectUndeviated(ParticleState* state) override;
