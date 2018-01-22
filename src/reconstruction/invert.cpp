@@ -102,7 +102,7 @@ void invert_fluences(double* fluence_adjusted, double fluence_expected, int pixe
             for(int iy = 0; iy < pixels[1]; iy++) {
                 int index = getIndex(ix, iy);
 
-                double det = d2pdxdx[index] * d2pdxdx[index] - d2pdxdy[index] * d2pdxdy[index];
+                double det = d2pdxdx[index] * d2pdydy[index] - d2pdxdy[index] * d2pdxdy[index];
 
                 double fluence = interp(dpdx[index], dpdy[index], ix == 193 && iy == 3);
 
