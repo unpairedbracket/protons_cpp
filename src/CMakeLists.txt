@@ -40,8 +40,11 @@ target_link_libraries(protons Graphics)
 target_link_libraries(protons Reconstruction)
 
 add_executable(protons-headless main.cpp)
-
 target_link_libraries(protons-headless Code)
 target_link_libraries(protons-headless Reconstruction)
 
-install(TARGETS protons protons-headless DESTINATION bin)
+add_executable(reconstruct-nonlinear main_reconstruct.cpp)
+target_link_libraries(reconstruct-nonlinear Reconstruction)
+target_link_libraries(reconstruct-nonlinear libhdf5_hl_cpp.so libhdf5_hl.so libhdf5_cpp.so libhdf5.so)
+
+install(TARGETS protons protons-headless reconstruct-nonlinear DESTINATION bin)
