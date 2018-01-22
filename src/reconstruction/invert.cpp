@@ -81,97 +81,101 @@ void invert_fluences(double* fluence_adjusted, double fluence_expected, int pixe
     };
 
     // Setup initial potential and gradients
-    for(int iy = 0; iy < pixels[1]; iy++) {
-        for(int ix = 0; ix < pixels[0]; ix++) {
-            int index = getIndex(ix, iy);
-            double x = getCoord(ix, size[0], pixels[0]);
-            double y = getCoord(iy, size[1], pixels[1]);
-            potential[index] = 0.5 * ( x*x + y*y );
-            dpdx[index] = x;
-            dpdy[index] = y;
+    #pragma omp parallel for
+    for(int index = 0; iy < n_pixels; index++) {
+        int iy = index / pixels[0];
+        int ix = index % pixels[0];
 
-            d2pdxdx[index] = 1;
-            d2pdxdy[index] = 0;
-            d2pdydy[index] = 1;
-        }
+        double x = getCoord(ix, size[0], pixels[0]);
+        double y = getCoord(iy, size[1], pixels[1]);
+        potential[index] = 0.5 * ( x*x + y*y );
+        dpdx[index] = x;
+        dpdy[index] = y;
+
+        d2pdxdx[index] = 1;
+        d2pdxdy[index] = 0;
+        d2pdydy[index] = 1;
     }
 
-    for(int N = 0; N < 1; N++) {
+    for(int N = 0; N < 10000; N++) {
         double sumsq = 0;
-        for(int ix = 0; ix < pixels[0]; ix++) {
-            for(int iy = 0; iy < pixels[1]; iy++) {
-                int index = getIndex(ix, iy);
 
-                double det = d2pdxdx[index] * d2pdydy[index] - d2pdxdy[index] * d2pdxdy[index];
+        #pragma omp parallel for
+        for(int index = 0; index < n_pixels; index++) {
+            int iy = index / pixels[0];
+            int ix = index % pixels[0];
 
-                double fluence = interp(dpdx[index], dpdy[index], ix == 193 && iy == 3);
+            double det = d2pdxdx[index] * d2pdydy[index] - d2pdxdy[index] * d2pdxdy[index];
 
-                double Fdt = log(fluence*abs(det)/fluence_expected) * dt;
+            double fluence = interp(dpdx[index], dpdy[index], ix == 193 && iy == 3);
 
-                //Reduction
-                sumsq += Fdt*Fdt / (potential[index] * potential[index]);
+            double Fdt = log(fluence*abs(det)/fluence_expected) * dt;
 
-                potential[index] += Fdt;
-            }
+            //Reduction
+            #pragma omp atomic
+            sumsq += Fdt*Fdt / (potential[index] * potential[index]);
+
+            potential[index] += Fdt;
         }
+
         printf("%d: rms proportional diff in potential: %e\n", N, sqrt(sumsq / (pixels[0] * pixels[1])));
 
-        for(int ix = 0; ix < pixels[0]; ix++) {
-            for(int iy = 0; iy < pixels[1]; iy++) {
-                int index = getIndex(ix, iy);
+        #pragma omp parallel for
+        for(int index = 0; index < n_pixels; index++) {
+            int iy = index / pixels[0];
+            int ix = index % pixels[0];
 
-                if(ix == 0 || ix == pixels[0] - 1) {
-                    dpdx[index] = getCoord(ix, size[0], pixels[0]);
-                } else {
-                    dpdx[index] = (potential[getIndex(ix+1, iy)] - potential[getIndex(ix-1, iy)]) / (2 * dx);
-                }
+            if(ix == 0 || ix == pixels[0] - 1) {
+                dpdx[index] = getCoord(ix, size[0], pixels[0]);
+            } else {
+                dpdx[index] = (potential[getIndex(ix+1, iy)] - potential[getIndex(ix-1, iy)]) / (2 * dx);
+            }
 
-                if(iy == 0 || iy == pixels[1] - 1) {
-                    dpdy[index] = getCoord(iy, size[1], pixels[1]);
-                } else {
-                    dpdy[index] = (potential[getIndex(ix, iy+1)] - potential[getIndex(ix, iy-1)]) / (2 * dy);
-                }
+            if(iy == 0 || iy == pixels[1] - 1) {
+                dpdy[index] = getCoord(iy, size[1], pixels[1]);
+            } else {
+                dpdy[index] = (potential[getIndex(ix, iy+1)] - potential[getIndex(ix, iy-1)]) / (2 * dy);
+            }
 
-                int im = ix-1;
-                int i0 = ix;
-                int ip = ix+1;
+            int im = ix-1;
+            int i0 = ix;
+            int ip = ix+1;
 
-                if(ix == 0) {
-                    im++;
-                    i0++;
-                    ip++;
-                } else if(ix == pixels[0] - 1) {
-                    im--;
-                    i0--;
-                    ip--;
-                }
-                d2pdxdx[index] = (potential[getIndex(ip, iy)] - 2 * potential[getIndex(i0, iy)] + potential[getIndex(im, iy)]) / (dx * dx);
+            if(ix == 0) {
+                im++;
+                i0++;
+                ip++;
+            } else if(ix == pixels[0] - 1) {
+                im--;
+                i0--;
+                ip--;
+            }
+            d2pdxdx[index] = (potential[getIndex(ip, iy)] - 2 * potential[getIndex(i0, iy)] + potential[getIndex(im, iy)]) / (dx * dx);
 
-                im = iy-1;
-                i0 = iy;
-                ip = iy+1;
+            im = iy-1;
+            i0 = iy;
+            ip = iy+1;
 
-                if(iy == 0) {
-                    im++;
-                    i0++;
-                    ip++;
-                } else if(iy == pixels[1] - 1) {
-                    im--;
-                    i0--;
-                    ip--;
-                }
-                d2pdydy[index] = (potential[getIndex(ix, ip)] - 2 * potential[getIndex(ix, i0)] + potential[getIndex(ix, im)]) / (dy * dy);
+            if(iy == 0) {
+                im++;
+                i0++;
+                ip++;
+            } else if(iy == pixels[1] - 1) {
+                im--;
+                i0--;
+                ip--;
+            }
+            d2pdydy[index] = (potential[getIndex(ix, ip)] - 2 * potential[getIndex(ix, i0)] + potential[getIndex(ix, im)]) / (dy * dy);
 
-                if(ix == 0 || ix == pixels[0] - 1 || iy == 0 || iy == pixels[1] - 1) {
-                    d2pdxdy[index] = 0;
-                } else {
-                    double pp = potential[getIndex(ix+1, iy+1)];
-                    double pm = potential[getIndex(ix+1, iy-1)];
-                    double mp = potential[getIndex(ix-1, iy+1)];
-                    double mm = potential[getIndex(ix-1, iy-1)];
-                    d2pdxdy[index] = ((pp - mp)
-                                    - (pm - mm)) / (4 * dx *dy);
-                }
+            if(ix == 0 || ix == pixels[0] - 1 || iy == 0 || iy == pixels[1] - 1) {
+                d2pdxdy[index] = 0;
+            } else {
+                double pp = potential[getIndex(ix+1, iy+1)];
+                double pm = potential[getIndex(ix+1, iy-1)];
+                double mp = potential[getIndex(ix-1, iy+1)];
+                double mm = potential[getIndex(ix-1, iy-1)];
+                d2pdxdy[index] = ((pp - mp)
+                                - (pm - mm)) / (4 * dx *dy);
             }
         }
     }
