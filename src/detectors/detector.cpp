@@ -68,7 +68,7 @@ void DetectorHDF5::output() {
         dims[1] = 3;
         DataSpace dataspace(2, dims);
 
-        // Create the dataset.      
+        // Create the dataset.
         DataSet dataset_pos = file.createDataSet("Positions",  PredType::IEEE_F64BE, dataspace);
         DataSet dataset_vel = file.createDataSet("Velocities",  PredType::IEEE_F64BE, dataspace);
 
@@ -142,57 +142,66 @@ void DetectorFluence::performInversion(double expectedFluencePerArea) {
         adjustedFluences[i] = std::max(this->fl_expected / 1000, this->detectorArray[i] - this->nullDetectorArray[i] + this->fl_expected);
     }
 
-    invert_fluences(adjustedFluences, this->fl_expected, this->detectorPixels, this->detectorSize, 1e-11, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
+    invert_fluences(adjustedFluences, this->fl_expected, this->detectorPixels, this->detectorSize, 1e-9, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
 }
 
 void DetectorFluence::output() {
     using namespace H5;
-    try {
-        Exception::dontPrint();
-
+    {
         H5File file("fluence.h5", H5F_ACC_TRUNC);
 
-        hsize_t dims[2] = { this->detectorPixels[1], this->detectorPixels[0] };
+        hsize_t dims[2];
+        dims[0] = this->detectorPixels[1];
+        dims[1] = this->detectorPixels[0];
         DataSpace dataspace(2, dims);
 
         // Create the dataset.
-        DataSet dataset = file.createDataSet("fluence",  PredType::IEEE_F64BE, dataspace);
+        DataSet dataset = file.createDataSet("/fluence",  PredType::IEEE_F64BE, dataspace);
         dataset.write(this->detectorArray, PredType::NATIVE_DOUBLE);
         dataset.close();
 
-        dataset = file.createDataSet("fluence_0",  PredType::IEEE_F64BE, dataspace);
+        dataset = file.createDataSet("/fluence_0",  PredType::IEEE_F64BE, dataspace);
         dataset.write(this->nullDetectorArray, PredType::NATIVE_DOUBLE);
 
+        hsize_t d[1] = {1};
+        dataset = file.createDataSet("/fluence_expected", PredType::IEEE_F64BE, DataSpace(1, d));
+        dataset.write(&this->fl_expected, PredType::NATIVE_DOUBLE);
+        dataset.close();
+
+        d[0] = 2;
+        double size[2] = {this->detectorSize[1], this->detectorSize[0]};
+        dataset = file.createDataSet("/detector_size", PredType::IEEE_F64BE, DataSpace(1, d));
+        dataset.write(size, PredType::NATIVE_DOUBLE);
+        dataset.close();
+
         if(shouldInvert) {
-            dataset = file.createDataSet("potential",  PredType::IEEE_F64BE, dataspace);
+            dataset = file.createDataSet("/potential",  PredType::IEEE_F64BE, dataspace);
             dataset.write(this->potentialArray, PredType::NATIVE_DOUBLE);
+            dataset.close();
 
-            dataset = file.createDataSet("X",  PredType::IEEE_F64BE, dataspace);
+            dataset = file.createDataSet("/X",  PredType::IEEE_F64BE, dataspace);
             dataset.write(this->X_Array, PredType::NATIVE_DOUBLE);
+            dataset.close();
 
-            dataset = file.createDataSet("Y",  PredType::IEEE_F64BE, dataspace);
+            dataset = file.createDataSet("/Y",  PredType::IEEE_F64BE, dataspace);
             dataset.write(this->Y_Array, PredType::NATIVE_DOUBLE);
+            dataset.close();
 
-            dataset = file.createDataSet("XX",  PredType::IEEE_F64BE, dataspace);
+            dataset = file.createDataSet("/XX",  PredType::IEEE_F64BE, dataspace);
             dataset.write(this->XX_Array, PredType::NATIVE_DOUBLE);
+            dataset.close();
 
-            dataset = file.createDataSet("XY",  PredType::IEEE_F64BE, dataspace);
+            dataset = file.createDataSet("/XY",  PredType::IEEE_F64BE, dataspace);
             dataset.write(this->XY_Array, PredType::NATIVE_DOUBLE);
+            dataset.close();
 
-            dataset = file.createDataSet("YY",  PredType::IEEE_F64BE, dataspace);
+            dataset = file.createDataSet("/YY",  PredType::IEEE_F64BE, dataspace);
             dataset.write(this->YY_Array, PredType::NATIVE_DOUBLE);
+            dataset.close();
 
-            hsize_t d[1] = {1};
-            dataset = file.createDataSet("fluence_expected", PredType::IEEE_F64BE, DataSpace(1, d));
-            dataset.write(&this->fl_expected, PredType::NATIVE_DOUBLE);
         }
 
         dataspace.close();
-        dataset.close();
         file.close();
-    } catch(FileIException error) {
-        error.printError();
-    } catch(DataSetIException error) {
-        error.printError();
     }
 }
