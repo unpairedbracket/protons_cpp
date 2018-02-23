@@ -110,10 +110,6 @@ ParticleInfo getParticleInfo() {
     return {mass, charge, charge / mass};
 }
 
-ParticleSource* getSourceInfo() {
-    return getSourceInfo(config["source"]);
-}
-
 ParticleSource* getSourceInfo(YAML::Node sourceNode) {
     ParticleSource* source = nullptr;
 
@@ -161,6 +157,10 @@ ParticleSource* getSourceInfo(YAML::Node sourceNode) {
     }
 
     return source;
+}
+
+ParticleSource* getSourceInfo() {
+    return getSourceInfo(config["source"]);
 }
 
 FieldStructure* getFieldsInfo() {

@@ -24,7 +24,6 @@ void replace_with_file(YAML::Node node, std::string prop);
 int getNumberRuns();
 ParticleInfo getParticleInfo();
 ParticleSource* getSourceInfo();
-ParticleSource* getSourceInfo(YAML::Node sourceNode);
 FieldStructure* getFieldsInfo();
 ParticleDetector* getDetectorInfo();
 Integrator* getIntegratorInfo();
