@@ -12,6 +12,7 @@ void load_config(const std::string& filename, const std::string& defaults_filena
     defaults = YAML::LoadFile(defaults_filename);
 
     if(!config["relativistic"]) config["relativistic"] = defaults["relativistic"];
+    if(!config["number_runs"]) config["number_runs"] = defaults["number_runs"];
     if(!config["particleType"]) config["particleType"] = defaults["particleType"];
     if(!config["source"]) config["source"] = defaults["source"];
     if(!config["field"]) config["field"] = defaults["field"];
@@ -50,6 +51,13 @@ void replace_with_file(YAML::Node node, std::string prop) {
         }
     }
     node[prop] = newnode;
+}
+
+int getNumberRuns() {
+    YAML::Node runsNode;
+    runsNode = config["number_runs"];
+
+    return runsNode.as<int>();
 }
 
 ParticleInfo getParticleInfo() {

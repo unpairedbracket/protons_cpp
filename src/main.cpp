@@ -51,9 +51,9 @@ int main(int argc, char *argv[]) {
         printf("Window opened\n");
     #endif
 
-    int full_iterations = 100000;
+    int number_runs = getNumberRuns();
 
-    for(int iteration = 0; iteration<full_iterations; iteration++) {
+    for(int iteration = 0; iteration<number_runs; iteration++) {
     source->setParticleState(state);
     setAllRunning(state);
     integrator->reset();
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     }
     }
 
-    detector->performInversion(full_iterations * state->N /( 2*pi() * (1 - cos(source->divergence)) * (source->distance + detector->distance) * (source->distance + detector->distance)));
+    detector->performInversion(number_runs * state->N /( 2*pi() * (1 - cos(source->divergence)) * (source->distance + detector->distance) * (source->distance + detector->distance)));
 
     detector->output();
 

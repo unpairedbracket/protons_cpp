@@ -1,6 +1,8 @@
 ---
 relativistic: true
 
+number_runs: 1
+
 particleType: proton
 
 source: helix
