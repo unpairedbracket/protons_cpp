@@ -2,6 +2,7 @@
 
 #include "../fields/fields_cocoon.h"
 #include "../fields/fields_flash.h"
+#include "../fields/fields_quasi3d.h"
 #include "../fields/fields_cylindrical.h"
 #include "../interpolation/natural.h"
 #include "../interpolation/linear.h"
@@ -207,6 +208,23 @@ FieldStructure* getFieldsInfo() {
 
             flashField->filename = fieldNode["filename"].as<std::string>();
             flashField->origin = {fieldNode["origin"][0].as<double>(), fieldNode["origin"][1].as<double>(), fieldNode["origin"][2].as<double>()};
+        }
+
+        if(fieldType.compare("quasi3d") == 0) {
+            Q3DField* quasiField = new Q3DField();
+            field = quasiField;
+
+            if(!fieldNode["origin"].IsSequence() || fieldNode["origin"].size() != 3) {
+                std::cout << "Q3D Field origin must be a 3d vector. Defaulting to [0, 0, 0]." << std::endl;
+                fieldNode["origin"] = YAML::Load("[0, 0, 0]");
+            }
+
+            quasiField->filename = fieldNode["filename"].as<std::string>();
+            quasiField->origin = {fieldNode["origin"][0].as<double>(), fieldNode["origin"][1].as<double>(), fieldNode["origin"][2].as<double>()};
+            quasiField->setWavelength(fieldNode["wavelength"].as<double>());
+            quasiField->b_mult = fieldNode["b_mult"].as<double>();
+            quasiField->e_mult = fieldNode["e_mult"].as<double>();
+
         }
 
         if(!fieldNode["axis"].IsSequence() || fieldNode["axis"].size() != 3) {

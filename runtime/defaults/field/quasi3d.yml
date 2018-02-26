@@ -1,0 +1,11 @@
+---
+type: quasi3d
+filename: fields.h5
+wavelength: 1e-6
+b_mult: 1
+e_mult: 1
+origin: [0, 0, 0]
+axis: [0, 0, 1]
+theta: 0
+phi: 0
+...
