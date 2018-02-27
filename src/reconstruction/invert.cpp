@@ -9,7 +9,31 @@ double getCoord(int index, double size, double steps) {
     return xmin + ((double)index + 0.5) * delta;
 }
 
-void invert_fluences(double* fluence_adjusted, double fluence_expected, int pixels[2], double size[2], double dt,
+void initialise_inversion_arrays(int pixels[2], double size[2], double* potential_out, double* X_out, double* Y_out,
+        double* XX_out, double* XY_out, double* YY_out) {
+
+    int n_pixels = pixels[0] * pixels[1];
+
+    // Setup initial potential and gradients
+    #pragma omp parallel for
+    for(int index = 0; index < n_pixels; index++) {
+        int iy = index / pixels[0];
+        int ix = index % pixels[0];
+
+        double x = getCoord(ix, size[0], pixels[0]);
+        double y = getCoord(iy, size[1], pixels[1]);
+        potential_out[index] = 0.5 * ( x*x + y*y );
+        X_out[index] = x;
+        Y_out[index] = y;
+
+        XX_out[index] = 1;
+        XY_out[index] = 0;
+        YY_out[index] = 1;
+    }
+
+}
+
+void invert_fluences(double* fluence_adjusted, double fluence_expected, int pixels[2], double size[2], double dt, int N,
         double* potential_out, double* X_out, double* Y_out, double* XX_out, double* XY_out, double* YY_out) {
     using std::abs;
 
@@ -29,7 +53,6 @@ void invert_fluences(double* fluence_adjusted, double fluence_expected, int pixe
 
 
     auto getIndex = [pixels] (int x, int y) -> int { return y * pixels[0] + x; };
-    printf("dx: %e, dy: %e\n", dx, dy);
 
     auto interp = [fluence_adjusted, size, pixels, dx, dy, getIndex, fluence_expected] (double x, double y, bool log) -> double {
         if(abs(x) >= size[0]/2 || abs(y) >= size[1]/2) {
@@ -80,24 +103,7 @@ void invert_fluences(double* fluence_adjusted, double fluence_expected, int pixe
         return fluence_my + (fluence_py - fluence_my) * del_y;
     };
 
-    // Setup initial potential and gradients
-    #pragma omp parallel for
-    for(int index = 0; iy < n_pixels; index++) {
-        int iy = index / pixels[0];
-        int ix = index % pixels[0];
-
-        double x = getCoord(ix, size[0], pixels[0]);
-        double y = getCoord(iy, size[1], pixels[1]);
-        potential[index] = 0.5 * ( x*x + y*y );
-        dpdx[index] = x;
-        dpdy[index] = y;
-
-        d2pdxdx[index] = 1;
-        d2pdxdy[index] = 0;
-        d2pdydy[index] = 1;
-    }
-
-    for(int N = 0; N < 10000; N++) {
+    for(int i = 0; i < N; i++) {
         double sumsq = 0;
 
         #pragma omp parallel for
@@ -118,7 +124,7 @@ void invert_fluences(double* fluence_adjusted, double fluence_expected, int pixe
             potential[index] += Fdt;
         }
 
-        printf("%d: rms proportional diff in potential: %e\n", N, sqrt(sumsq / (pixels[0] * pixels[1])));
+        printf("%d: rms proportional diff in potential: %e\n", i, sqrt(sumsq / (pixels[0] * pixels[1])));
 
         #pragma omp parallel for
         for(int index = 0; index < n_pixels; index++) {

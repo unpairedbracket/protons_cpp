@@ -142,7 +142,9 @@ void DetectorFluence::performInversion(double expectedFluencePerArea) {
         adjustedFluences[i] = std::max(this->fl_expected / 1000, this->detectorArray[i] - this->nullDetectorArray[i] + this->fl_expected);
     }
 
-    invert_fluences(adjustedFluences, this->fl_expected, this->detectorPixels, this->detectorSize, 1e-9, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
+    initialise_inversion_arrays(this->detectorPixels, this->detectorSize, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
+
+    invert_fluences(adjustedFluences, this->fl_expected, this->detectorPixels, this->detectorSize, 1e-9, 100, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
 }
 
 void DetectorFluence::output() {
@@ -176,27 +178,27 @@ void DetectorFluence::output() {
 
         if(shouldInvert) {
             dataset = file.createDataSet("/potential",  PredType::IEEE_F64BE, dataspace);
-            dataset.write(this->potentialArray, PredType::NATIVE_DOUBLE);
+            if(this->potentialArray) dataset.write(this->potentialArray, PredType::NATIVE_DOUBLE);
             dataset.close();
 
             dataset = file.createDataSet("/X",  PredType::IEEE_F64BE, dataspace);
-            dataset.write(this->X_Array, PredType::NATIVE_DOUBLE);
+            if(this->X_Array) dataset.write(this->X_Array, PredType::NATIVE_DOUBLE);
             dataset.close();
 
             dataset = file.createDataSet("/Y",  PredType::IEEE_F64BE, dataspace);
-            dataset.write(this->Y_Array, PredType::NATIVE_DOUBLE);
+            if(this->Y_Array) dataset.write(this->Y_Array, PredType::NATIVE_DOUBLE);
             dataset.close();
 
             dataset = file.createDataSet("/XX",  PredType::IEEE_F64BE, dataspace);
-            dataset.write(this->XX_Array, PredType::NATIVE_DOUBLE);
+            if(this->XX_Array) dataset.write(this->XX_Array, PredType::NATIVE_DOUBLE);
             dataset.close();
 
             dataset = file.createDataSet("/XY",  PredType::IEEE_F64BE, dataspace);
-            dataset.write(this->XY_Array, PredType::NATIVE_DOUBLE);
+            if(this->XY_Array) dataset.write(this->XY_Array, PredType::NATIVE_DOUBLE);
             dataset.close();
 
             dataset = file.createDataSet("/YY",  PredType::IEEE_F64BE, dataspace);
-            dataset.write(this->YY_Array, PredType::NATIVE_DOUBLE);
+            if(this->YY_Array) dataset.write(this->YY_Array, PredType::NATIVE_DOUBLE);
             dataset.close();
 
         }
