@@ -1,5 +1,5 @@
 #pragma once
-
+#include <cstdio>
 #include "../particles/structs.h"
 
 struct ParticleDetector {
@@ -10,8 +10,11 @@ struct ParticleDetector {
     void finalPush(ParticleState* state);
     virtual void detectUndeviated(ParticleState* state) = 0;
     virtual void detect(ParticleState* state) = 0;
-    virtual void performInversion(double expected) {};
+    virtual void setExpectedFluence(double expectedFluencePerArea) {};
+    virtual void performInversion() {};
     virtual void output() = 0;
+    virtual void setupGraphics() { printf("Hello");};
+    virtual void draw() {};
 };
 
 struct DetectorTextFile : ParticleDetector {
@@ -31,6 +34,7 @@ struct DetectorHDF5 : ParticleDetector {
 struct DetectorFluence : ParticleDetector {
     int detectorPixels[2];
     double detectorSize[2];
+    float* normalised;
     double* detectorArray;
     double* nullDetectorArray;
 
@@ -47,6 +51,11 @@ struct DetectorFluence : ParticleDetector {
 
     void detectUndeviated(ParticleState* state) override;
     void detect(ParticleState* state) override;
-    void performInversion(double expected) override;
+    void setExpectedFluence(double expectedPerArea) override;
+    void performInversion() override;
     void output() override;
+    #ifdef USE_GL
+    void setupGraphics() override;
+    void draw() override;
+    #endif
 };

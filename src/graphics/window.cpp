@@ -3,7 +3,14 @@
 #include <png.h>
 #include <glm/gtc/type_ptr.hpp>
 
-int openWindow(const char * vertex_file_path,const char * fragment_file_path) {
+#include "../util/physical_constants.h"
+
+int openWindow(const char * vertex_file_path, const char * fragment_file_path) {
+    int size[2] = {1000, 1000};
+    return openWindowSized(vertex_file_path, fragment_file_path, size);
+}
+
+int openWindowSized(const char * vertex_file_path, const char * fragment_file_path, int size[2]) {
     // Initialise GLFW
     if( !glfwInit() )
     {
@@ -17,9 +24,9 @@ int openWindow(const char * vertex_file_path,const char * fragment_file_path) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
     // Open a window and create its OpenGL context
-    window = glfwCreateWindow( 1000, 1000, "Particle Tracer", NULL, NULL);
+    window = glfwCreateWindow( size[1], size[0], "Proton Radiography", NULL, NULL);
     if( window == NULL ){
-        fprintf( stderr, "Failed to open window. This program requires OpenGL 4.\n" );
+        fprintf( stderr, "Failed to open window. This program requires OpenGL 4.5\n" );
         glfwTerminate();
         return -1;
     }
@@ -40,6 +47,37 @@ int openWindow(const char * vertex_file_path,const char * fragment_file_path) {
 
     MatrixID = glGetUniformLocation(programID, "MVP");
 
+    return 0;
+}
+
+int setupMatrix(double max_beta, FieldStructure* field) {
+    Projection = glm::ortho(-max_beta * c, max_beta * c, -max_beta * c, max_beta * c, -c, c);
+
+    // Camera matrix
+    View = glm::lookAt(
+        glm::vec3(0, 0, 0), // Camera is at the origin of velocity space
+        glm::vec3(0, 0, c), // and looks at +c
+        glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down)
+    );
+
+    // Model matrix : an identity matrix (model will be at the origin)
+    double matrix[16] = {
+        field->xaxis.x, field->yaxis.x, field->zaxis.x, 0,
+        field->xaxis.y, field->yaxis.y, field->zaxis.y, 0,
+        field->xaxis.z, field->yaxis.z, field->zaxis.z, 0,
+        0, 0, 0, 1
+    };
+
+    Model = glm::make_mat4(matrix);
+    // Our ModelViewProjection : multiplication of our 3 matrices
+    mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
+
+    printf("[%e, %e, %e, %e;\n %e, %e, %e, %e;\n %e, %e, %e, %e;\n %e, %e, %e, %e]",
+            mvp[0][0], mvp[0][1], mvp[0][2], mvp[0][3],
+            mvp[1][0], mvp[1][1], mvp[1][2], mvp[1][3],
+            mvp[2][0], mvp[2][1], mvp[2][2], mvp[2][3],
+            mvp[3][0], mvp[3][1], mvp[3][2], mvp[3][3]
+        );
     return 0;
 }
 
@@ -94,6 +132,45 @@ int updateBuffers(double pos[], bool running[], long N) {
 
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffers[1]);
     glBufferSubData(GL_ARRAY_BUFFER, 0, N*sizeof(bool), running);
+
+    return 0;
+}
+
+int setupBuffersTexRectangle(float* tbo_data, int pixels[2]) {
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+
+    // Generate 2 buffers, put the resulting identifier in vertexbuffer
+    glGenBuffers(2, vertexbuffers);
+
+    float verts[12] = {-1, -1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0};
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffers[0]);
+    glBufferData(GL_ARRAY_BUFFER, 3*4*sizeof(float), verts, GL_STATIC_DRAW);
+
+    //glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vertexbuffers[1]);
+    //glBufferData(GL_PIXEL_UNPACK_BUFFER, n_pixels*sizeof(double), tbo_data, GL_STREAM_DRAW);
+    glGenTextures(1, &TextureID);
+    glBindTexture(GL_TEXTURE_2D, TextureID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, pixels[1], pixels[0], 0, GL_RED, GL_FLOAT, (GLvoid*)tbo_data);
+
+    //glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    TexUniformID = glGetUniformLocation(programID, "tex");
+
+    return 0;
+}
+
+int updateBuffersTexRectangle(float* tbo_data, int pixels[2]) {
+    glBindTexture(GL_TEXTURE_2D, TextureID);
+    //glBindBuffer(GL_PIXEL_UNPACK_BUFFER, vertexbuffers[1]);
+    //glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, n_pixels*sizeof(float), tbo_data);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pixels[1], pixels[0], GL_RED, GL_FLOAT, tbo_data);
+
+    //glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     return 0;
 }
@@ -197,6 +274,37 @@ int draw(int N, int name_length, char* name, bool wait) {
         else
            printf("Failed\n");
     }
+    return 0;
+}
+
+int drawTexRectangle() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(programID);
+
+
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffers[0]);
+    glVertexAttribPointer(
+        0,          // attribute 0. No particular reason for 0, but must match the layout in the shader.
+        3,          // size
+        GL_FLOAT,   // type
+        GL_FALSE,
+        0,          // stride
+        (void*)0    // array buffer offset
+    );
+
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(TexUniformID, 0);
+
+    // Draw the quad !
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDisableVertexAttribArray(0);
+
+    // Swap buffers
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+
     return 0;
 }
 

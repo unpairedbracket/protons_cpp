@@ -96,10 +96,14 @@ void DetectorFluence::detect(ParticleState* state) {
         if(xfrac >= 0 && xfrac <= 1 && yfrac >= 0 && yfrac <= 1) {
             int xcell = floor(this->detectorPixels[0] * xfrac);
             int ycell = floor(this->detectorPixels[1] * yfrac);
-            int idx = ycell * this->detectorPixels[0] + xcell;
+            int idx = xcell * this->detectorPixels[1] + ycell;
             #pragma omp atomic
             detectorArray[idx]++;
         }
+    }
+    #pragma omp parallel for
+    for(long j = 0; j < this->detectorPixels[0] * this->detectorPixels[1]; j++) {
+        this->normalised[j] = 1 - exp( - this->detectorArray[j] / this->fl_expected);
     }
 }
 
@@ -114,14 +118,19 @@ void DetectorFluence::detectUndeviated(ParticleState* state) {
         if(xfrac >= 0 && xfrac <= 1 && yfrac >= 0 && yfrac <= 1) {
             int xcell = floor(this->detectorPixels[0] * xfrac);
             int ycell = floor(this->detectorPixels[1] * yfrac);
-            int idx = ycell * this->detectorPixels[0] + xcell;
+            int idx = xcell * this->detectorPixels[1] + ycell;
             #pragma omp atomic
             nullDetectorArray[idx]++;
         }
     }
 }
 
-void DetectorFluence::performInversion(double expectedFluencePerArea) {
+void DetectorFluence::setExpectedFluence(double expectedFluencePerArea) {
+    double pixel_area = (this->detectorSize[0]*this->detectorSize[1]) / (this->detectorPixels[0]*this->detectorPixels[1]);
+    this->fl_expected = expectedFluencePerArea * pixel_area;
+}
+
+void DetectorFluence::performInversion() {
     if(!shouldInvert) {
         return;
     }
@@ -129,15 +138,12 @@ void DetectorFluence::performInversion(double expectedFluencePerArea) {
     potentialArray = new double[this->detectorPixels[0] * this->detectorPixels[1]];
     X_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
     Y_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
-    
+
     XX_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
     YY_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
     XY_Array = new double[this->detectorPixels[0] * this->detectorPixels[1]];
 
-    double pixel_area = (this->detectorSize[0]*this->detectorSize[1]) / (this->detectorPixels[0]*this->detectorPixels[1]);
-    this->fl_expected = expectedFluencePerArea * pixel_area;
-
-    for(int i = 0; i < this->detectorPixels[0] * this->detectorPixels[1]; i++) {
+       for(int i = 0; i < this->detectorPixels[0] * this->detectorPixels[1]; i++) {
         // Fluence that's actually zero will blow up to -inf in the logarithm - avoid
         adjustedFluences[i] = std::max(this->fl_expected / 1000, this->detectorArray[i] - this->nullDetectorArray[i] + this->fl_expected);
     }
@@ -153,8 +159,8 @@ void DetectorFluence::output() {
         H5File file("fluence.h5", H5F_ACC_TRUNC);
 
         hsize_t dims[2];
-        dims[0] = this->detectorPixels[1];
-        dims[1] = this->detectorPixels[0];
+        dims[0] = this->detectorPixels[0];
+        dims[1] = this->detectorPixels[1];
         DataSpace dataspace(2, dims);
 
         // Create the dataset.
@@ -171,7 +177,7 @@ void DetectorFluence::output() {
         dataset.close();
 
         d[0] = 2;
-        double size[2] = {this->detectorSize[1], this->detectorSize[0]};
+        double size[2] = {this->detectorSize[0], this->detectorSize[1]};
         dataset = file.createDataSet("/detector_size", PredType::IEEE_F64BE, DataSpace(1, d));
         dataset.write(size, PredType::NATIVE_DOUBLE);
         dataset.close();
@@ -207,3 +213,21 @@ void DetectorFluence::output() {
         file.close();
     }
 }
+
+#ifdef USE_GL
+#include "../graphics/window.h"
+
+void DetectorFluence::setupGraphics() {
+    printf("opening Window\n");
+    openWindowSized("shaders/fluence_shader.vert", "shaders/fluence_shader.frag", this->detectorPixels);
+    printf("Setting Matrix");
+    setupBuffersTexRectangle(this->normalised, this->detectorPixels);
+    updateBuffersTexRectangle(this->normalised, this->detectorPixels);
+}
+
+void DetectorFluence::draw() {
+    updateBuffersTexRectangle(this->normalised, this->detectorPixels);
+    drawTexRectangle();
+}
+
+#endif
