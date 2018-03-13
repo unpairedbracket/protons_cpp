@@ -142,9 +142,9 @@ void DetectorFluence::performInversion(double expectedFluencePerArea) {
         adjustedFluences[i] = std::max(this->fl_expected / 1000, this->detectorArray[i] - this->nullDetectorArray[i] + this->fl_expected);
     }
 
-    initialise_inversion_arrays(this->detectorPixels, this->detectorSize, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
+    //initialise_inversion_arrays(this->detectorPixels, this->detectorSize, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
 
-    invert_fluences(adjustedFluences, this->fl_expected, this->detectorPixels, this->detectorSize, 1e-9, 100, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
+    //invert_fluences(adjustedFluences, this->fl_expected, this->detectorPixels, this->detectorSize, 1e-9, 100, potentialArray, X_Array, Y_Array, XX_Array, XY_Array, YY_Array);
 }
 
 void DetectorFluence::output() {

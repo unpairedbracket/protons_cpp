@@ -5,16 +5,20 @@
 #include <H5Cpp.h>
 
 #include "reconstruction/invert.h"
+#include "util/ndarray.h"
 
 using namespace H5;
+
+typedef ArrayND<2, double> Array;
 
 int main(int argc, char *argv[]) {
     int pixels[2];
     double detectorSize[2];
 
     // Note fluence and fluence_undeviated are arrays, fluence_expected is a scalar value
-    double *fluence, *fluence_undeviated, fluence_expected;
-    double *Phi, *X, *Y, *XX, *YY, *XY;
+    Array fluence, fluence_undeviated;
+    double fluence_expected;
+    Array Phi, X, Y, XX, YY, XY;
 
     H5File file(argv[1], H5F_ACC_RDWR);
 
@@ -23,17 +27,18 @@ int main(int argc, char *argv[]) {
 
     hsize_t dims[2];
     dataspace.getSimpleExtentDims( dims, NULL);
-    pixels[0] = dims[1]; pixels[1] = dims[0];
+    pixels[0] = dims[0]; pixels[1] = dims[1];
     int num_pixels = pixels[0]*pixels[1];
 
-    fluence = new double[num_pixels];
-    fluence_data.read(fluence, PredType::NATIVE_DOUBLE);
+    fluence.assignMemory(pixels);
+    fluence_data.read(fluence.memory, PredType::NATIVE_DOUBLE);
     dataspace.close();
     fluence_data.close();
 
     DataSet undeviated_data = file.openDataSet( "/fluence_0" );
-    fluence_undeviated = new double[num_pixels];
-    undeviated_data.read(fluence_undeviated, PredType::NATIVE_DOUBLE);
+    fluence_undeviated.assignMemory(pixels);
+
+    undeviated_data.read(fluence_undeviated.memory, PredType::NATIVE_DOUBLE);
     undeviated_data.close();
 
     DataSet expected_data = file.openDataSet( "/fluence_expected" );
@@ -46,13 +51,13 @@ int main(int argc, char *argv[]) {
 
     printf("[%d, %d] pixels, size %e by %e metres\n", pixels[0], pixels[1], detectorSize[0], detectorSize[1]);
 
-    Phi = new double[num_pixels];
-    X = new double[num_pixels];
-    Y = new double[num_pixels];
+    Phi.assignMemory(pixels);
+    X.assignMemory(pixels);
+    Y.assignMemory(pixels);
 
-    XX = new double[num_pixels];
-    YY = new double[num_pixels];
-    XY = new double[num_pixels];
+    XX.assignMemory(pixels);
+    YY.assignMemory(pixels);
+    XY.assignMemory(pixels);
 
     for(int i = 0; i < num_pixels; i++) {
         // Fluence that's actually zero will blow up to -inf in the logarithm - avoid
@@ -74,27 +79,27 @@ int main(int argc, char *argv[]) {
 
     while(N > 0) {
         DataSet dataset = file.openDataSet("/potential");
-        dataset.write(Phi, PredType::NATIVE_DOUBLE);
+        dataset.write(Phi.memory, PredType::NATIVE_DOUBLE);
         dataset.close();
 
         dataset = file.openDataSet("/X");
-        dataset.write(X, PredType::NATIVE_DOUBLE);
+        dataset.write(X.memory, PredType::NATIVE_DOUBLE);
         dataset.close();
 
         dataset = file.openDataSet("/Y");
-        dataset.write(Y, PredType::NATIVE_DOUBLE);
+        dataset.write(Y.memory, PredType::NATIVE_DOUBLE);
         dataset.close();
 
         dataset = file.openDataSet("/XX");
-        dataset.write(XX, PredType::NATIVE_DOUBLE);
+        dataset.write(XX.memory, PredType::NATIVE_DOUBLE);
         dataset.close();
 
         dataset = file.openDataSet("/XY");
-        dataset.write(XY, PredType::NATIVE_DOUBLE);
+        dataset.write(XY.memory, PredType::NATIVE_DOUBLE);
         dataset.close();
 
         dataset = file.openDataSet("/YY");
-        dataset.write(YY, PredType::NATIVE_DOUBLE);
+        dataset.write(YY.memory, PredType::NATIVE_DOUBLE);
         dataset.close();
 
         file.flush(H5F_SCOPE_LOCAL);
