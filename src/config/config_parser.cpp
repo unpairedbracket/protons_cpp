@@ -3,6 +3,7 @@
 #include "../fields/fields_cocoon.h"
 #include "../fields/fields_flash.h"
 #include "../fields/fields_quasi3d.h"
+#include "../fields/fields_osiris2d.h"
 #include "../fields/fields_cylindrical.h"
 #include "../interpolation/natural.h"
 #include "../interpolation/linear.h"
@@ -227,6 +228,23 @@ FieldStructure* getFieldsInfo() {
 
         }
 
+        if(fieldType.compare("osiris2d") == 0) {
+            Osiris2DField* quasiField = new Osiris2DField();
+            field = quasiField;
+
+            if(!fieldNode["origin"].IsSequence() || fieldNode["origin"].size() != 2) {
+                std::cout << "2D Field origin must be a 2D vector. Defaulting to [0, 0]." << std::endl;
+                fieldNode["origin"] = YAML::Load("[0, 0]");
+            }
+
+            quasiField->filename = fieldNode["filename"].as<std::string>();
+            quasiField->origin = {fieldNode["origin"][0].as<double>(), fieldNode["origin"][1].as<double>(), 0};
+            quasiField->setWavelength(fieldNode["wavelength"].as<double>());
+            quasiField->b_mult = fieldNode["b_mult"].as<double>();
+            quasiField->e_mult = fieldNode["e_mult"].as<double>();
+
+        }
+
         if(!fieldNode["axis"].IsSequence() || fieldNode["axis"].size() != 3) {
             std::cout << "Field principal axis must be a 3d vector. Defaulting to [0, 0, 1]." << std::endl;
             fieldNode["axis"] = YAML::Load("[0, 0, 1]");
@@ -258,6 +276,7 @@ ParticleDetector* getDetectorInfo() {
         fluence->detectorSize[1] = detectorNode["size"][1].as<double>();
         fluence->detectorArray = new double[fluence->detectorPixels[0]*fluence->detectorPixels[1]];
         fluence->nullDetectorArray = new double[fluence->detectorPixels[0]*fluence->detectorPixels[1]];
+        fluence->normalised = new float[fluence->detectorPixels[0]*fluence->detectorPixels[1]];
         detector = fluence;
     }
 
