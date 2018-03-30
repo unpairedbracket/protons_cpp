@@ -176,11 +176,6 @@ FieldStructure* getFieldsInfo() {
     fieldNode = config["field"];
 
     if(fieldNode.IsMap()) {
-        if(!fieldNode["type"]) {
-            std::cout << "No field type specified. Defaulting to cocoon." << std::endl;
-            fieldNode["type"] = "cocoon";
-        }
-
         std::string fieldType = fieldNode["type"].as<std::string>();
 
         if(fieldType.compare("cocoon") == 0) {
@@ -247,6 +242,10 @@ FieldStructure* getFieldsInfo() {
             quasiField->b_mult = fieldNode["b_mult"].as<double>();
             quasiField->e_mult = fieldNode["e_mult"].as<double>();
 
+        }
+
+        if(fieldType.compare("dummy") == 0) {
+            field = new DummyField();
         }
 
         if(!fieldNode["axis"].IsSequence() || fieldNode["axis"].size() != 3) {
