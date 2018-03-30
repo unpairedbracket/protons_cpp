@@ -16,6 +16,10 @@ struct ParticleState {
     Vector3 *pos;
     Vector3 *vel;
     Vector3 *acc;
+
+    Vector3 *intE;
+    Vector3 *intB;
+
     bool *running;
     long N;
     long N_running;

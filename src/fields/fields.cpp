@@ -74,6 +74,18 @@ void FieldStructure::orientBeam(ParticleState* state) {
             state->vel[j].x * xaxis.y + state->vel[j].y * yaxis.y + state->vel[j].z * zaxis.y,
             state->vel[j].x * xaxis.z + state->vel[j].y * yaxis.z + state->vel[j].z * zaxis.z
         };
+
+        state->intE[j] = {
+            state->intE[j].x * xaxis.x + state->intE[j].y * yaxis.x + state->intE[j].z * zaxis.x,
+            state->intE[j].x * xaxis.y + state->intE[j].y * yaxis.y + state->intE[j].z * zaxis.y,
+            state->intE[j].x * xaxis.z + state->intE[j].y * yaxis.z + state->intE[j].z * zaxis.z
+        };
+
+        state->intB[j] = {
+            state->intB[j].x * xaxis.x + state->intB[j].y * yaxis.x + state->intB[j].z * zaxis.x,
+            state->intB[j].x * xaxis.y + state->intB[j].y * yaxis.y + state->intB[j].z * zaxis.y,
+            state->intB[j].x * xaxis.z + state->intB[j].y * yaxis.z + state->intB[j].z * zaxis.z
+        };
     }
 }
 void FieldStructure::deorientBeam(ParticleState* state) {
@@ -91,6 +103,18 @@ void FieldStructure::deorientBeam(ParticleState* state) {
             state->vel[j].x * xaxis.x + state->vel[j].y * xaxis.y + state->vel[j].z * xaxis.z,
             state->vel[j].x * yaxis.x + state->vel[j].y * yaxis.y + state->vel[j].z * yaxis.z,
             state->vel[j].x * zaxis.x + state->vel[j].y * zaxis.y + state->vel[j].z * zaxis.z
+        };
+
+        state->intE[j] = {
+            state->intE[j].x * xaxis.x + state->intE[j].y * xaxis.y + state->intE[j].z * xaxis.z,
+            state->intE[j].x * yaxis.x + state->intE[j].y * yaxis.y + state->intE[j].z * yaxis.z,
+            state->intE[j].x * zaxis.x + state->intE[j].y * zaxis.y + state->intE[j].z * zaxis.z
+        };
+
+        state->intB[j] = {
+            state->intB[j].x * xaxis.x + state->intB[j].y * xaxis.y + state->intB[j].z * xaxis.z,
+            state->intB[j].x * yaxis.x + state->intB[j].y * yaxis.y + state->intB[j].z * yaxis.z,
+            state->intB[j].x * zaxis.x + state->intB[j].y * zaxis.y + state->intB[j].z * zaxis.z
         };
     }
 }

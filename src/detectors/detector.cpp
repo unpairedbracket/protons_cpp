@@ -71,15 +71,21 @@ void DetectorHDF5::output() {
         // Create the dataset.
         DataSet dataset_pos = file.createDataSet("Positions",  PredType::IEEE_F64BE, dataspace);
         DataSet dataset_vel = file.createDataSet("Velocities",  PredType::IEEE_F64BE, dataspace);
+        DataSet dataset_E = file.createDataSet("E",  PredType::IEEE_F64BE, dataspace);
+        DataSet dataset_B = file.createDataSet("B",  PredType::IEEE_F64BE, dataspace);
 
         // Write the data to the dataset using default memory space, file
         // space, and transfer properties.
         dataset_pos.write(state->pos, PredType::NATIVE_DOUBLE);
         dataset_vel.write(state->vel, PredType::NATIVE_DOUBLE);
+        dataset_E.write(state->intE, PredType::NATIVE_DOUBLE);
+        dataset_B.write(state->intB, PredType::NATIVE_DOUBLE);
 
         dataspace.close();
         dataset_pos.close();
         dataset_vel.close();
+        dataset_E.close();
+        dataset_B.close();
         file.close();
     } catch(FileIException error) {
         error.printError();
