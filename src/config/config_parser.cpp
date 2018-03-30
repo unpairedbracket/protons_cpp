@@ -118,12 +118,16 @@ ParticleSource* getSourceInfo(YAML::Node sourceNode) {
     if(sourceNode.IsMap()) {
         std::string sourceType = sourceNode["type"].as<std::string>();
 
-        if(sourceType.compare("square") == 0) {
-            SquareSource* squareSource = new SquareSource();
-            source = squareSource;
+        if(sourceType.compare("rectangle") == 0) {
+            RectangleSource* rectSource = new RectangleSource();
+            source = rectSource;
 
-            squareSource->x_extent = sourceNode["N"][0].as<long>();
-            squareSource->y_extent = sourceNode["N"][1].as<long>();
+            rectSource->x_points = sourceNode["N"][0].as<long>();
+            rectSource->y_points = sourceNode["N"][1].as<long>();
+
+            rectSource->x_size = sourceNode["size"][0].as<double>();
+            rectSource->y_size = sourceNode["size"][1].as<double>();
+            sourceNode["divergence"] = atan2(sqrt(rectSource->x_size*rectSource->x_size + rectSource->y_size*rectSource->y_size)/2, sourceNode["distance"].as<double>());
         }
         if(sourceType.compare("helix") == 0) {
             if(!sourceNode["pitch"]) {

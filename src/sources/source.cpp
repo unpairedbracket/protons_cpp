@@ -13,27 +13,28 @@ inline double speed(double energy, double mass) {
     return beta*c;
 }
 
-ParticleState* SquareSource::createParticleState(ParticleInfo particleType) {
+ParticleState* RectangleSource::createParticleState(ParticleInfo particleType) {
     ParticleState* state = new ParticleState();
-    initParticleState(state, particleType, this->x_extent * this->y_extent);
+    initParticleState(state, particleType, this->x_points * this->y_points);
     return state;
 }
 
-void SquareSource::setParticleState(ParticleState* state) {
+void RectangleSource::setParticleState(ParticleState* state) {
     initPosPointSource(state, this->distance);
 
-    assert(this->divergence < pi() / 4);
-
     double v = speed(this->energy, state->particleInfo.mass);
+    double Z = this->distance;
     for(long i = 0; i < state->N; i++) {
-        long j = i / this->y_extent;
-        long k = i % this->y_extent;
-        double angleX = (2*j / ((double)this->x_extent-1) - 1) * this->divergence;
-        double angleY = (2*k / ((double)this->y_extent-1) - 1) * this->divergence;
+        long j = i / this->y_points;
+        long k = i % this->y_points;
+        double X = (j / ((double)this->x_points-1) - 0.5) * this->x_size;
+        double Y = (k / ((double)this->y_points-1) - 0.5) * this->y_size;
 
-        state->vel[i].x = v * sin(angleX);
-        state->vel[i].y = v * sin(angleY);
-        state->vel[i].z = v * sqrt(cos(angleX + angleY) * cos(angleX - angleY));
+        double length = sqrt(X*X + Y*Y + Z*Z);
+
+        state->vel[i].x = v * X / length;
+        state->vel[i].y = v * Y / length;
+        state->vel[i].z = v * Z / length;
     }
 }
 

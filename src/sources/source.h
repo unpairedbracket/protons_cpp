@@ -13,8 +13,9 @@ struct ParticleSource {
     virtual void setParticleState(ParticleState* state) = 0;
 };
 
-struct SquareSource : ParticleSource {
-    long x_extent, y_extent;
+struct RectangleSource : ParticleSource {
+    long x_points, y_points;
+    double x_size, y_size;
 
     ParticleState* createParticleState(ParticleInfo particleType) override;
     void setParticleState(ParticleState* state) override;
