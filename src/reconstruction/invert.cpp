@@ -15,7 +15,6 @@ void initialise_inversion_arrays(int pixels[2], double size[2], Array potential_
     int n_pixels = pixels[0] * pixels[1];
 
     // Setup initial potential and gradients
-    #pragma omp parallel for
     for(int index = 0; index < n_pixels; index++) {
         int ix = index / pixels[1];
         int iy = index % pixels[1];
@@ -104,7 +103,6 @@ void invert_fluences(Array fluence_adjusted, double fluence_expected, int pixels
     for(int i = 0; i < N; i++) {
         double sumsq = 0;
 
-        #pragma omp parallel for
         for(int index = 0; index < n_pixels; index++) {
             double det = d2pdxdx[index] * d2pdydy[index] - d2pdxdy[index] * d2pdxdy[index];
 
@@ -113,7 +111,6 @@ void invert_fluences(Array fluence_adjusted, double fluence_expected, int pixels
             double Fdt = log(fluence*abs(det)/fluence_expected) * dt;
 
             //Reduction
-            #pragma omp atomic
             sumsq += Fdt*Fdt / (potential[index] * potential[index]);
 
             potential[index] += Fdt;
@@ -121,7 +118,6 @@ void invert_fluences(Array fluence_adjusted, double fluence_expected, int pixels
 
         printf("%d: rms proportional diff in potential: %e\n", i, sqrt(sumsq / (pixels[0] * pixels[1])));
 
-        #pragma omp parallel for
         for(int index = 0; index < n_pixels; index++) {
             int ix = index / pixels[1];
             int iy = index % pixels[1];
