@@ -1,5 +1,6 @@
 #include "config_parser.h"
 
+#include "../fields/fields_dummy.h"
 #include "../fields/fields_cocoon.h"
 #include "../fields/fields_flash.h"
 #include "../fields/fields_quasi3d.h"
@@ -7,6 +8,7 @@
 #include "../fields/fields_cylindrical.h"
 #include "../interpolation/natural.h"
 #include "../interpolation/linear.h"
+#include "../interpolation/bilinear.h"
 #include "../util/physical_constants.h"
 
 void load_config(const std::string& filename, const std::string& defaults_filename) {
@@ -21,7 +23,6 @@ void load_config(const std::string& filename, const std::string& defaults_filena
     if(!config["integrator"]) config["integrator"] = defaults["integrator"];
     if(!config["detector"]) config["detector"] = defaults["detector"];
     if(!config["middleware"]) config["middleware"] = defaults["middleware"];
-    if(!config["interpolation"]) config["interpolation"] = defaults["interpolation"];
 
     resolve_defaults(config);
 
@@ -33,7 +34,6 @@ void resolve_defaults(YAML::Node node) {
     replace_with_file(node, "field");
     replace_with_file(node, "integrator");
     replace_with_file(node, "detector");
-    replace_with_file(node, "interpolation");
 }
 
 void replace_with_file(YAML::Node node, std::string prop) {
@@ -165,10 +165,6 @@ ParticleSource* getSourceInfo(YAML::Node sourceNode) {
     return source;
 }
 
-ParticleSource* getSourceInfo() {
-    return getSourceInfo(config["source"]);
-}
-
 FieldStructure* getFieldsInfo() {
     FieldStructure* field = nullptr;
     YAML::Node fieldNode;
@@ -288,23 +284,42 @@ ParticleDetector* getDetectorInfo() {
     return detector;
 }
 
-Integrator* getIntegratorInfo() {
+Interpolator* getInterpolatorInfo(YAML::Node interpolatorNode, YAML::Node sourceNode) {
+    Interpolator* interpolator = nullptr;
+
+    if(interpolatorNode.IsMap()) {
+        std::string sourceType = sourceNode["type"].as<std::string>();
+        std::string interpolationMethod = interpolatorNode["method"].as<std::string>();
+
+        if (sourceType.compare("rectangle") == 0) {
+            if (interpolationMethod.compare("linear") == 0) {
+                BilinearInterpolator* biInterpolator = new BilinearInterpolator();
+                biInterpolator->n_cells[0] = sourceNode["N"][0].as<int>();
+                biInterpolator->n_cells[1] = sourceNode["N"][1].as<int>();
+
+                double distance = sourceNode["distance"].as<double>();
+                biInterpolator->size[0] = sourceNode["size"][0].as<double>() / distance;
+                biInterpolator->size[1] = sourceNode["size"][1].as<double>() / distance;
+                interpolator = biInterpolator;
+            } else {
+                printf("Interpolation method %s not supported on %s sources", interpolationMethod.c_str(), sourceType.c_str());
+            }
+        } else {
+            if (interpolationMethod.compare("linear")) {
+                interpolator = new ScatteredLinearInterpolator();
+            } else if (interpolationMethod.compare("natural_neighbor") == 0) {
+                interpolator = new NaturalInterpolator();
+            } else {
+                printf("Interpolation method %s not supported on %s sources", interpolationMethod.c_str(), sourceType.c_str());
+            }
+        }
+    }
+
+    return interpolator;
+}
+
+Integrator* getIntegratorInfo(YAML::Node integratorNode) {
     Integrator* integrator = nullptr;
-    YAML::Node integratorNode;
-
-    if(!config["integrator"]) {
-        std::cout << "No integrator specified. Defaulting to RK4." << std::endl;
-        config["integrator"] = "RK4";
-    }
-
-    integratorNode = config["integrator"];
-
-    if(integratorNode.IsScalar()) {
-        std::cout << "Integrator only specified by name. Will use defaults for that type" << std::endl;
-        YAML::Node parentNode;
-        parentNode["type"] = integratorNode;
-        integratorNode = parentNode;
-    }
 
     if(integratorNode.IsMap()) {
         if(!integratorNode["type"]) {
@@ -330,6 +345,19 @@ Integrator* getIntegratorInfo() {
             rkdp->verbose = integratorNode["verbose"].as<bool>();
         } else if (integratorType.compare("ballistic") == 0) {
             integrator = new BallisticIntegrator();
+        } else if (integratorType.compare("interpolate") == 0) {
+            replace_with_file(integratorNode, "source");
+            replace_with_file(integratorNode, "integrator");
+            integratorNode["time_step"] = 0;
+            InterpolatingIntegrator* interp = new InterpolatingIntegrator();
+            integrator = interp;
+            interp->interpolator = getInterpolatorInfo(integratorNode["interpolator"], integratorNode["source"]);
+            interp->source = getSourceInfo(integratorNode["source"]);
+            interp->integrator = getIntegratorInfo(integratorNode["integrator"]);
+            interp->field = getFieldsInfo();
+            integratorNode["field"] = config["field"];
+            config["field"] = "dummy";
+            replace_with_file(config, "field");
         }
 
         if(!integratorNode["relativistic"]) {
@@ -349,28 +377,11 @@ Integrator* getIntegratorInfo() {
     return integrator;
 }
 
-Interpolator* getInterpolatorInfo() {
-    Interpolator* interpolator = nullptr;
-    YAML::Node interpolatorNode = config["interpolation"];
-
-    if(interpolatorNode.IsMap()) {
-        std::string interpolatorType = interpolatorNode["type"].as<std::string>();
-
-        if (interpolatorType.compare("linear") == 0) {
-            interpolator = new LinearInterpolator();
-        } else if (interpolatorType.compare("natural_neighbor") == 0) {
-            interpolator = new NaturalInterpolator();
-        }
-
-        if(interpolator) {
-            replace_with_file(interpolatorNode, "source");
-            interpolatorNode["source"]["energy"] = config["source"]["energy"];
-            interpolatorNode["source"]["divergence"] = config["source"]["divergence"];
-
-            interpolator->interpSource = getSourceInfo(interpolatorNode["source"]);
-            interpolator->iterations = interpolatorNode["iterations"].as<int>();
-        }
-    }
-
-    return interpolator;
+ParticleSource* getSourceInfo() {
+    return getSourceInfo(config["source"]);
 }
+
+Integrator* getIntegratorInfo() {
+    return getIntegratorInfo(config["integrator"]);
+}
+

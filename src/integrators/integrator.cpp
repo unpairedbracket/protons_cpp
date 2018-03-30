@@ -2,6 +2,9 @@
 
 #include <cstdio>
 
+#include "../detectors/detector.h"
+#include "../util/invalidateStates.h"
+
 const double RKDPIntegrator::a2[] = {1.0/5.0};
 const double RKDPIntegrator::a3[] = {3.0/40.0, 9.0/40.0};
 const double RKDPIntegrator::a4[] = {44.0/45.0, -56.0/15.0, 32.0/9.0};
@@ -644,4 +647,61 @@ void BallisticIntegrator::step(ParticleState* state, FieldStructure* field) {
             state->intB[j].z += field->B[j].z * dt;
         }
     }
+}
+
+void InterpolatingIntegrator::initFromState(ParticleState* otherstate) {
+    ParticleInfo particleType = otherstate->particleInfo;
+
+    ParticleState* state = source->createParticleState(particleType);
+
+    integrator->initFromState(state);
+
+    field->initFieldArrays(state->N);
+    field->initFields();
+
+    ParticleDetector* detector = new DetectorHDF5();
+    detector->distance = 0;
+
+    source->setParticleState(state);
+    setAllRunning(state);
+    integrator->reset();
+    detector->detectUndeviated(state);
+
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        double distance = state->pos[j].z - field->min_z;
+        state->pos[j].x -= distance * state->vel[j].x / state->vel[j].z;
+        state->pos[j].y -= distance * state->vel[j].y / state->vel[j].z;
+        state->pos[j].z -= distance;
+    }
+
+    printf("Setting sample points\n");
+    interpolator->setSamplePoints(state);
+
+    field->orientBeam(state);
+
+    long i = 0;
+    const long steps = 15000;
+
+    for(i = 0; i < steps && state->N_running > 0; i++) {
+        integrator->step(state, field);
+        field->invalidatePositions(state);
+        invalidateStates(state);
+    }
+    printf("Interpolation map generated: %li iterations taken \n", i+1);
+
+    field->deorientBeam(state);
+
+    detector->finalPush(state);
+
+    printf("Setting sample values\n");
+    interpolator->setSampleValues(state);
+    detector->detect(state);
+    detector->output();
+    integrator->deinit();
+}
+
+void InterpolatingIntegrator::step(ParticleState* state, FieldStructure* field) {
+    interpolator->interpolate(state);
+    state->N_running = 0;
 }

@@ -1,5 +1,0 @@
----
-type: natural_neighbor
-source: scatter_random
-iterations: 1
-...

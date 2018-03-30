@@ -27,5 +27,4 @@ ParticleSource* getSourceInfo();
 FieldStructure* getFieldsInfo();
 ParticleDetector* getDetectorInfo();
 Integrator* getIntegratorInfo();
-Interpolator* getInterpolatorInfo();
 

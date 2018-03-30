@@ -13,5 +13,3 @@ void print_status(ParticleState* state);
 int main(int argc, char *argv[]);
 
 void accel(ParticleState* state, FieldStructure* fields);
-
-void invalidateStates(ParticleState* state);

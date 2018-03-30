@@ -11,6 +11,7 @@
 
 #include "util/math.h"
 #include "util/physical_constants.h"
+#include "util/invalidateStates.h"
 #include "detectors/detector.h"
 #include "integrators/integrator.h"
 #include "config/config_parser.h"
@@ -28,8 +29,8 @@ int main(int argc, char *argv[]) {
 
     ParticleState* state = source->createParticleState(particleType);
 
-    Interpolator* interp = getInterpolatorInfo();
-    bool shouldInterpolate = interp;
+    Integrator* integrator = getIntegratorInfo();
+    integrator->initFromState(state);
 
     //Object
     FieldStructure* field = getFieldsInfo();
@@ -38,10 +39,6 @@ int main(int argc, char *argv[]) {
 
     //Detector
     ParticleDetector* detector = getDetectorInfo();
-
-    Integrator* integrator = getIntegratorInfo();
-    integrator->initFromState(state);
-
 
     #ifdef USE_GL
         int drawType = 2;
@@ -81,10 +78,6 @@ int main(int argc, char *argv[]) {
         state->pos[j].z -= distance;
     }
 
-    if(shouldInterpolate)
-        interp->setSamplePoints(state);
-
-
     std::chrono::steady_clock::time_point begin;
     std::chrono::steady_clock::time_point end;
 
@@ -110,7 +103,7 @@ int main(int argc, char *argv[]) {
             } else if(drawType == 1) {
                 updateBuffers(&state->pos[0].x, state->running, state->N);
                 draw(state->N, 0, nullptr);
-            }   
+            }
         #endif
 
         end = std::chrono::steady_clock::now();
@@ -125,87 +118,37 @@ int main(int argc, char *argv[]) {
     std::cout << "Standard Deviation: " << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / 1000.0 << " us (" << sqrt((sumSqTimes/i) - (sumTimes*sumTimes)/(i*i)) / (1000.0 * state->N) << " us per particle)" << std::endl;
 
     field->deorientBeam(state);
-    
+
     double density = state->N /( 2*pi() * (1 - cos(source->divergence)) * (source->distance + detector->distance) * (source->distance + detector->distance));
 
     detector->setExpectedFluence((iteration+1) * density);
 
-    if(!shouldInterpolate) {
-        detector->finalPush(state);
-        detector->detect(state);
-        #ifdef USE_GL
-            if(drawType == 0) {
-                field->orientBeam(state);
-                char name[11] = "output.png";
-                updateBuffers(&state->pos[0].x, state->running, state->N);
-                draw(state->N, 10, name, false);
-                field->deorientBeam(state);
-            } else if(drawType == 1) {
-                field->orientBeam(state);
-                char name[11] = "output.png";
-                updateBuffers(&state->pos[0].x, state->running, state->N);
-                draw(state->N, 10, name, false);
-                field->deorientBeam(state);
-            } else if(drawType == 2) {
-                detector->draw();
-            }
-        #endif
-    } else {
-        begin = std::chrono::steady_clock::now();
-        interp->setSampleValues(state);
-        for(int i = 0; i < interp->iterations; i++) {
-            printf("Initialising particles for iteration %d... ", i);
-            interp->initState(particleType);
-            if(i==69) {printf("NICE\n");} else {printf("DONE\n");}
-            printf("Interpolating %ld particles... ", interp->interpParticles->N);
-            interp->interpolate();
-            printf("DONE\n");
-            detector->finalPush(interp->interpParticles);
-            detector->detect(interp->interpParticles);
-            #ifdef USE_GL
-                if(drawType == 0) {
-                    field->orientBeam(state);
-                    char name[11] = "output.png";
-                    updateBuffers(&state->pos[0].x, state->running, state->N);
-                    draw(state->N, 10, name, false);
-                    field->deorientBeam(state);
-                } else if(drawType == 1) {
-                    field->orientBeam(state);
-                    char name[11] = "output.png";
-                    updateBuffers(&state->pos[0].x, state->running, state->N);
-                    draw(state->N, 10, name, false);
-                    field->deorientBeam(state);
-                } else if(drawType == 2) {
-                    detector->draw();
-                }
-            #endif
+    detector->finalPush(state);
+    detector->detect(state);
+    #ifdef USE_GL
+        if(drawType == 0) {
+            field->orientBeam(state);
+            char name[11] = "output.png";
+            updateBuffers(&state->pos[0].x, state->running, state->N);
+            draw(state->N, 10, name, false);
+            field->deorientBeam(state);
+        } else if(drawType == 1) {
+            field->orientBeam(state);
+            char name[11] = "output.png";
+            updateBuffers(&state->pos[0].x, state->running, state->N);
+            draw(state->N, 10, name, false);
+            field->deorientBeam(state);
+        } else if(drawType == 2) {
+            detector->draw();
         }
-        end = std::chrono::steady_clock::now();
-        double nanoTaken = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
-        printf("Interpolation took %f microsec per particle\n", nanoTaken/(1000.0 * interp->iterations * interp->interpParticles->N));
-    }
+    #endif
+
     if((iteration+1) % 1000 == 0) detector->output();
     }
 
     detector->performInversion();
-
     detector->output();
-
     integrator->deinit();
     return 0;
 }
 
-void invalidateStates(ParticleState* particles) {
-    #pragma omp parallel for
-    for(long j = 0; j < particles->N; j++) {
-        if(particles->running[j])
-        {
-            if(particles->vel[j].x*particles->vel[j].x + particles->vel[j].y*particles->vel[j].y + particles->vel[j].z*particles->vel[j].z > c*c
-            ) {
-                particles->running[j] = false;
-                #pragma omp atomic
-                particles->N_running--;
-            }
-        }
-    }
-}

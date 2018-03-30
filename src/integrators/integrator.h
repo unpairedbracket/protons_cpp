@@ -2,8 +2,9 @@
 
 #include <cmath>
 
-#include "../particles/structs.h"
+#include "../interpolation/interpolator.h"
 #include "../fields/fields.h"
+#include "../particles/structs.h"
 #include "../util/accel.h"
 
 struct Integrator {
@@ -97,5 +98,18 @@ struct BallisticIntegrator : Integrator {
     void setRelativistic(bool isRelativistic) {};
     void initFromState(ParticleState* state) {};
     void setInitTimestep(double dt) override;
+    void step(ParticleState* state, FieldStructure* field) override;
+};
+
+struct InterpolatingIntegrator : Integrator {
+    ParticleSource* source;
+    Interpolator* interpolator;
+    Integrator* integrator;
+    FieldStructure* field;
+
+    void deinit() {};
+    void setRelativistic(bool isRelativistic) {};
+    void initFromState(ParticleState* state) override;
+    void setInitTimestep(double dt) {};
     void step(ParticleState* state, FieldStructure* field) override;
 };
