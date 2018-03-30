@@ -618,3 +618,30 @@ void RKDPIntegrator::step(ParticleState* state, FieldStructure* field) {
             printf("            %li particles failed to converge at miminum stepsize; stopping them.\n", numStopped);
     }
 }
+
+void BallisticIntegrator::setInitTimestep(double dt) {
+    this->dt = dt;
+}
+
+void BallisticIntegrator::step(ParticleState* state, FieldStructure* field) {
+
+    field->getFields(state);
+
+    #pragma omp parallel for
+    for(long j = 0; j < state->N; j++) {
+        if(state->running[j])
+        {
+            state->pos[j].x += state->vel[j].x * dt;
+            state->pos[j].y += state->vel[j].y * dt;
+            state->pos[j].z += state->vel[j].z * dt;
+
+            state->intE[j].x += field->E[j].x * dt;
+            state->intE[j].y += field->E[j].y * dt;
+            state->intE[j].z += field->E[j].z * dt;
+
+            state->intB[j].x += field->B[j].x * dt;
+            state->intB[j].y += field->B[j].y * dt;
+            state->intB[j].z += field->B[j].z * dt;
+        }
+    }
+}

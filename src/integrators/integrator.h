@@ -89,3 +89,13 @@ struct RKDPIntegrator : Integrator {
     void step(ParticleState* state, FieldStructure* field) override;
     void reset() override;
 };
+
+struct BallisticIntegrator : Integrator {
+    double dt;
+
+    void deinit() {};
+    void setRelativistic(bool isRelativistic) {};
+    void initFromState(ParticleState* state) {};
+    void setInitTimestep(double dt) override;
+    void step(ParticleState* state, FieldStructure* field) override;
+};

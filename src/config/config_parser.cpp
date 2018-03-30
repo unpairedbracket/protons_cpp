@@ -314,16 +314,6 @@ Integrator* getIntegratorInfo() {
 
         std::string integratorType = integratorNode["type"].as<std::string>();
 
-        if(!(integratorType.compare("euler") == 0
-          || integratorType.compare("Euler") == 0
-          || integratorType.compare("rk4") == 0
-          || integratorType.compare("RK4") == 0
-          || integratorType.compare("RKDP") == 0
-          )) {
-            std::cout << "Unsupported integrator type '" << integratorType << "'. Defaulting to RK4." << std::endl;
-            integratorType = std::string("RK4");
-        }
-
         if(integratorType.compare("euler") == 0 || integratorType.compare("Euler") == 0) {
             integrator = new EulerIntegrator();
         } else if (integratorType.compare("rk4") == 0 || integratorType.compare("RK4") == 0) {
@@ -338,6 +328,8 @@ Integrator* getIntegratorInfo() {
             rkdp->maxOtherShorten = integratorNode["max_shorten"].as<double>();
             rkdp->kill_failed_particles = integratorNode["remove_failed_particles"].as<bool>();
             rkdp->verbose = integratorNode["verbose"].as<bool>();
+        } else if (integratorType.compare("ballistic") == 0) {
+            integrator = new BallisticIntegrator();
         }
 
         if(!integratorNode["relativistic"]) {
@@ -350,17 +342,11 @@ Integrator* getIntegratorInfo() {
             }
         }
 
-        if(!integratorNode["time_step"]) {
-            std::cout << "No time step specified." << std::endl;
-            integratorNode["time_step"] = 1E-10;
-        }
-
         integrator->setInitTimestep(integratorNode["time_step"].as<double>());
         integrator->setRelativistic(integratorNode["relativistic"].as<bool>());
     }
 
     return integrator;
-
 }
 
 Interpolator* getInterpolatorInfo() {
