@@ -259,8 +259,8 @@ void Osiris2DField::getFields(ParticleState* state) {
             int idx_m, idy_m;
 
             bool valid = false;
-            if(fracx > 0 && fracx < this->n_cells[0]) {
-                if(fracy > 0 && fracy < this->n_cells[1]) {
+            if(fracx > 0.5 && fracx < this->n_cells[0] - 0.5) {
+                if(fracy > 0.5 && fracy < this->n_cells[1] - 0.5) {
                     valid = true;
                     idx_m = floor(fracx);
                     idy_m = floor(fracy);
@@ -270,12 +270,14 @@ void Osiris2DField::getFields(ParticleState* state) {
             this->B[j] = { 0, 0, 0 };
 
             if(valid) {
+                double By_m = 0, By_p = 0;
+                double Bz_m = 0, Bz_p = 0;
                 for(int i = 0; i < max_channels; i++) {
                     int centre = this->channels[i].centres[idx_m];
                     int start = this->channels[i].starts[idx_m];
                     int end = this->channels[i].ends[idx_m];
                     if(centre >= 0){
-                        double centre_y = this->ylim[0] + (0.5 + centre) * dy;
+                        double centre_y = this->ylim[0] + (0.5 + (double)centre) * dy;
                         double y_rel = state->pos[j].y - centre_y;
                         double z_rel = state->pos[j].z;
                         double r = sqrt(y_rel * y_rel + z_rel*z_rel);
@@ -295,10 +297,42 @@ void Osiris2DField::getFields(ParticleState* state) {
                         if(idr_m > start) {
                             b_phi -= proportionLeft * this->b3(idr_m, idx_m);
                         }
-                        this->B[j].z += b_phi * cos_phi;
-                        this->B[j].y -= b_phi * sin_phi;
+                        Bz_m += b_phi * cos_phi;
+                        By_m -= b_phi * sin_phi;
                     }
                 }
+                int idx_p = idx_m + 1;
+                for(int i = 0; i < max_channels; i++) {
+                    int centre = this->channels[i].centres[idx_p];
+                    int start = this->channels[i].starts[idx_p];
+                    int end = this->channels[i].ends[idx_p];
+                    if(centre >= 0){
+                        double centre_y = this->ylim[0] + (0.5 + (double)centre) * dy;
+                        double y_rel = state->pos[j].y - centre_y;
+                        double z_rel = state->pos[j].z;
+                        double r = sqrt(y_rel * y_rel + z_rel*z_rel);
+                        int idr_p = centre + floor(r / dy);
+                        int idr_m = centre - floor(r / dy);
+
+                        double cos_phi = y_rel / r;
+                        double sin_phi = z_rel / r;
+
+                        double proportionRight = 0.5 * (1.0 + cos_phi);
+                        double proportionLeft = 0.5 * (1.0 - cos_phi);
+
+                        double b_phi = 0;
+                        if(idr_p < end) {
+                            b_phi += proportionRight * this->b3(idr_p, idx_p);
+                        }
+                        if(idr_m > start) {
+                            b_phi -= proportionLeft * this->b3(idr_m, idx_p);
+                        }
+                        Bz_p += b_phi * cos_phi;
+                        By_p -= b_phi * sin_phi;
+                    }
+                }
+                this->B[j] = { 0.0, By_m + (fracx - (double)idx_m) * (By_p - By_m), Bz_m + (fracx - (double)idx_m) * (Bz_p - Bz_m) };
+                //this->B[j] = { 0.0, By_m, Bz_m };
             }
         } else {
             this->B[j] = { 0.0, 0.0, 0.0 };
